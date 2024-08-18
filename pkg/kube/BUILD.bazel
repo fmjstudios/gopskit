@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "kube",
+    srcs = [
+        "config.go",
+        "kube.go",
+        "search.go",
+    ],
+    importpath = "github.com/fmjstudios/gopskit/pkg/kube",
+    visibility = ["//visibility:private"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":kube",
+    visibility = ["//visibility:private"],
+)

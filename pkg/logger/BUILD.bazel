@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "log",
+    srcs = ["log.go"],
+    importpath = "github.com/fmjstudios/gopskit/pkg/log",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":logger",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "logger",
+    srcs = ["logger.go"],
+    importpath = "github.com/fmjstudios/gopskit/pkg/logger",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+    ],
+)
