@@ -1,50 +1,50 @@
 package platform
 
 import (
+	"errors"
+	"fmt"
 	"github.com/fmjstudios/gopskit/pkg/logger"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	kubehome "k8s.io/client-go/util/homedir"
 	"os"
-	"os/user"
 	"path/filepath"
 	"runtime"
 )
 
 var (
+	DefaultApplicationName = "gopskit"
+	DefaultConfigType      = "yaml"
+	KnownConfigTypes       = []string{"yaml", "json"}
+
 	// a package-local logger
 	log *logger.Logger = nil
-
-	// global variables
-	HomeDir    string
-	Executable string
-	InstallDir string
-	ConfigDir  string
-	LogDir     string
 )
+
+var _ Config = (*Platform)(nil) // Verify Platform implements Config
 
 // set up logger to use within this (shareable) package
 func init() {
 	log = logger.New()
 }
 
-type Option func(p *Platform)
+// Opt is a configuration option for the PlatformConfig
+type Opt func(p *Platform)
 
-type Platform interface {
+type Config interface {
 	// Home returns the home directory of the current platform
 	Home() string
 
 	// Bin returns the path to the current executable
 	Bin() string
 
-	// BinPath returns the path the binary installation directory on the local system
-	// On Linux it would be something like '/usr/local/bin'
-	BinPath() string
+	// InstallDir is the path to the installation directory of the local executable
+	// If the executable is being run via a SymLink it will refer to the `basename`
+	// of the link pointer
+	InstallDir() string
 
-	// InstallPath is the path to the installation directory of the local executable
-	// The InstallPath may or may not be synonymous with the BinPath
-	InstallPath() string
-
-	// ConfigPath is the path to the configuration directory
-	ConfigPath() string
+	// ConfigDir is the path to the configuration directory
+	ConfigDir() string
 
 	// CacheDir is the caching directory
 	CacheDir() string
@@ -53,7 +53,10 @@ type Platform interface {
 	LogDir() string
 }
 
-type Config struct {
+type Platform struct {
+	// general info
+	app string // the name of the application we're building paths for
+
 	// (global) directories
 	homeDir    string
 	installDir string
@@ -61,12 +64,9 @@ type Config struct {
 	cacheDir   string
 	logDir     string
 
-	// general info
-	appName string // the name of the application we're building paths for
-
 	// relevant paths
 	executable string
-	binPath    string
+	configType string
 	configPath string
 	exists     bool
 }
@@ -75,53 +75,174 @@ type Config struct {
 // A call to Current also update the platform-scoped global variables for use outside the package.
 //
 // Another way of obtaining a Platform object is by using New with the corresponding options.
-func Current() *Config {
-	return &Config{}
+func Current() *Platform {
+	return &Platform{}
 }
 
 // New creates a fully initialized platform object using the specified Options
-func New(...Option) *Config {
-	return &Config{}
+func New(opts ...Opt) *Platform {
+	bin, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+
+	c := &Platform{
+		app:        DefaultApplicationName,
+		executable: bin,
+		configType: DefaultConfigType,
+	}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	// keep in line with Windows style decisions
+	if runtime.GOOS == "windows" {
+		c.app = cases.Title(language.Und, cases.Compact).String(c.app)
+	}
+
+	return c
 }
 
-// Name returns the pretty name of the current GOOS
-func Name() string {
-	return runtime.GOOS
+// WithApp configures the Platform object with a custom application name
+// By default 'gopskit' will be used
+func WithApp(app string) Opt {
+	return func(p *Platform) {
+		p.app = app
+	}
 }
 
-// Home returns the current user's home directory, respecting the Kubernetes Project's
-// sanity checks beforehand
-func Home() string {
+// WithConfigPath configures the Platform object with a custom configuration path
+// By default this will be determined via the Platforms configDir and the app
+func WithConfigPath(path string) Opt {
+	return func(p *Platform) {
+		p.configPath = path
+	}
+}
+
+// WithConfigType configures the Platform object with a custom configuration type
+// By default we assume the YAML file type since this package is most likely used
+// with Kubernetes and 'kubeconfig' files don't have file extensions
+//
+// If the file does however have an extension the type will be determined using that
+func WithConfigType(filetype string) Opt {
+	return func(p *Platform) {
+		p.configType = filetype
+	}
+}
+
+// Home returns the determined HOME directory
+func (p *Platform) Home() string {
+	return p.homeDir
+}
+
+// Bin returns current executable or the symlinked path
+func (p *Platform) Bin() string {
+	return p.executable
+}
+
+// InstallDir returns the determined installation directory or basename of the SymLink pointer
+func (p *Platform) InstallDir() string {
+	return p.installDir
+}
+
+// ConfigDir returns the determined configuration directory
+func (p *Platform) ConfigDir() string {
+	return p.configDir
+}
+
+// CacheDir returns the determined cache directory
+func (p *Platform) CacheDir() string {
+	return p.cacheDir
+}
+
+// LogDir returns the determined logging directory
+func (p *Platform) LogDir() string {
+	return p.logDir
+}
+
+// init initializes the new Platform object by calling the needed methods
+// to fill the properties
+func (p *Platform) init() error {
+	var err error
+	if p.homeDir, err = p.determineHomeDir(); err != nil {
+		return err
+	}
+
+	if p.configDir, err = p.determineConfigDir(); err != nil {
+		return err
+	}
+
+	if p.cacheDir, err = p.determineCacheDir(); err != nil {
+		return err
+	}
+
+	if p.logDir, err = p.determineLogDir(); err != nil {
+		return err
+	}
+
+	if p.executable, err = os.Executable(); err != nil {
+		return err
+	}
+
+	p.installDir = filepath.Dir(p.executable)
+
+	return nil
+}
+
+// determineHome determines the current user's home directory, respecting the Kubernetes Project's
+// sanity checks beforehand. Darwin uses the exact the function
+func (p *Platform) determineHomeDir() (string, error) {
 	home := kubehome.HomeDir()
 
+	// use Kubernetes' value if exists
 	if home != "" {
-		return home
+		return home, nil
 	}
 
+	// still empty? use Go's value then
 	home, err := os.UserHomeDir()
-	if err == nil {
-		return home
+	if err != nil {
+		return "", err
 	}
 
-	plt := Name()
-	usr, _ := user.Current()
-	switch plt {
-	default:
-		home = filepath.Join("home", usr.Username)
-	case "windows":
-		usrprof := os.Getenv("USERPROFILE")
-		if usrprof != "" {
-			home = usrprof
-		}
+	return home, nil
+}
 
-		usrdrv := os.Getenv("HOMEDRIVE")
-
-		if usrdrv != "" {
-			home = filepath.Join(usrdrv, "Users", usr.Username)
-		} else {
-			log.Fatal("Could not determine home directory for your system!")
-		}
+// determineConfigDir uses the previously discovered home directory to determine a directory for
+// configuration files
+func (p *Platform) determineConfigDir() (string, error) {
+	conf, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
 	}
 
-	return home
+	path := filepath.Join(conf, p.app)
+	return path, nil
+}
+
+// determineCacheDir uses the previously discovered home directory to determine the directory for
+// cache files
+func (p *Platform) determineCacheDir() (string, error) {
+	cache, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+
+	path := filepath.Join(cache, p.app)
+	return path, nil
+}
+
+// findConfigFile tries to find a configuration file in the ConfigDir
+func (p *Platform) findConfigFile() (string, error) {
+	dir := p.ConfigDir()
+	p.configPath = fmt.Sprintf("%s/%s.%s", dir, p.app, p.configType)
+
+	if _, err := os.Stat(p.configPath); errors.Is(err, os.ErrNotExist) {
+		p.exists = false
+		return "", errors.New("config file not found")
+	} else {
+		p.exists = true
+		return p.configPath, nil
+	}
 }
