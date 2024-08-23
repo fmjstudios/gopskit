@@ -5,7 +5,10 @@ go_library(
     srcs = ["cmd.go"],
     importpath = "github.com/fmjstudios/gopskit/internal/opsctl/cmd",
     visibility = ["//:__subpackages__"],
-    deps = ["@com_github_spf13_cobra//:cobra"],
+    deps = [
+        "//pkg/platform",
+        "@com_github_spf13_cobra//:cobra",
+    ],
 )
 
 alias(

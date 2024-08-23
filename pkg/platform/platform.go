@@ -3,7 +3,6 @@ package platform
 import (
 	"errors"
 	"fmt"
-	"github.com/fmjstudios/gopskit/pkg/logger"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	kubehome "k8s.io/client-go/util/homedir"
@@ -16,17 +15,9 @@ var (
 	DefaultApplicationName = "gopskit"
 	DefaultConfigType      = "yaml"
 	KnownConfigTypes       = []string{"yaml", "json"}
-
-	// a package-local logger
-	log *logger.Logger = nil
 )
 
 var _ Config = (*Platform)(nil) // Verify Platform implements Config
-
-// set up logger to use within this (shareable) package
-func init() {
-	log = logger.New()
-}
 
 // Opt is a configuration option for the PlatformConfig
 type Opt func(p *Platform)
@@ -99,6 +90,10 @@ func New(opts ...Opt) *Platform {
 	// keep in line with Windows style decisions
 	if runtime.GOOS == "windows" {
 		c.app = cases.Title(language.Und, cases.Compact).String(c.app)
+	}
+
+	if err := c.init(); err != nil {
+		panic(err)
 	}
 
 	return c

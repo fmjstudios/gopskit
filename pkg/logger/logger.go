@@ -3,7 +3,6 @@ package logger
 import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"path/filepath"
 	"time"
 )
 
@@ -21,7 +20,7 @@ var (
 			LevelKey:    "lvl",
 			EncodeLevel: zapcore.CapitalColorLevelEncoder,
 		},
-		OutputPaths:      []string{"stdout", filepath.Join("var", "log", "gopskit", "gopskit.log")},
+		OutputPaths:      []string{"stdout"},
 		ErrorOutputPaths: nil,
 		InitialFields: map[string]interface{}{
 			"date": time.Now().Format(time.RFC3339),
