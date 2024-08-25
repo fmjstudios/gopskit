@@ -1,14 +1,14 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "filesystem",
-    srcs = ["filesystem.go"],
-    importpath = "github.com/fmjstudios/gopskit/pkg/filesystem",
+    name = "buffers",
+    srcs = ["buffers.go"],
+    importpath = "github.com/fmjstudios/gopskit/pkg/buffers",
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "go_default_library",
-    actual = ":filesystem",
+    actual = ":buffers",
     visibility = ["//visibility:public"],
 )

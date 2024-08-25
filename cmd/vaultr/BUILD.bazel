@@ -5,6 +5,14 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/fmjstudios/gopskit/cmd/vaultr",
     visibility = ["//visibility:private"],
+    x_defs = {
+        "github.com/fmjstudios/gopskit/pkg/stamp.Version": module_version(),
+        "github.com/fmjstudios/gopskit/pkg/stamp.BuildDate": "{BUILD_DATE}",
+        "github.com/fmjstudios/gopskit/pkg/stamp.CommitSHA": "{GIT_COMMIT_SHA}",
+        "github.com/fmjstudios/gopskit/pkg/stamp.Branch": "{GIT_BRANCH}",
+        "github.com/fmjstudios/gopskit/pkg/stamp.Platform": "{PLATFORM}",
+        "github.com/fmjstudios/gopskit/pkg/stamp.GoVersion": "{GO_VERSION}",
+    },
     deps = [
         "//internal/vaultr/cmd",
         "//pkg/stamp",

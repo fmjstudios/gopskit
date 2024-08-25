@@ -3,12 +3,24 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "kube",
     srcs = [
-        "config.go",
+        "exec.go",
         "kube.go",
+        "port_forward.go",
         "search.go",
     ],
     importpath = "github.com/fmjstudios/gopskit/pkg/kube",
     visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/filesystem",
+        "//pkg/platform",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/util/httpstream",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//kubernetes/scheme",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_client_go//tools/clientcmd",
+        "@io_k8s_client_go//tools/remotecommand",
+    ],
 )
 
 alias(

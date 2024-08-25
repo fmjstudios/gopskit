@@ -1,5 +1,4 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
-load("//:tools/version.bzl", "load_version_from_module")
 
 go_library(
     name = "opsctl_lib",
@@ -7,8 +6,11 @@ go_library(
     importpath = "github.com/fmjstudios/gopskit/cmd/opsctl",
     visibility = ["//visibility:private"],
     x_defs = {
+        "github.com/fmjstudios/gopskit/pkg/stamp.Version": module_version(),
+        "github.com/fmjstudios/gopskit/pkg/stamp.BuildDate": "{BUILD_DATE}",
         "github.com/fmjstudios/gopskit/pkg/stamp.CommitSHA": "{GIT_COMMIT_SHA}",
         "github.com/fmjstudios/gopskit/pkg/stamp.Branch": "{GIT_BRANCH}",
+        "github.com/fmjstudios/gopskit/pkg/stamp.Platform": "{PLATFORM}",
         "github.com/fmjstudios/gopskit/pkg/stamp.GoVersion": "{GO_VERSION}",
     },
     deps = [
