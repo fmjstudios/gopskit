@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "tools",
+    srcs = [
+        "helmfile.go",
+        "smallstep.go",
+    ],
+    importpath = "github.com/fmjstudios/gopskit/pkg/tools",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_helmfile_helmfile//pkg/app",
+        "@com_github_helmfile_helmfile//pkg/config",
+        "@com_github_smallstep_certificates//cas/apiv1",
+        "@com_github_smallstep_certificates//pki",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tools",
+    visibility = ["//visibility:public"],
+)
