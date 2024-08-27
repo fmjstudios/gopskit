@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/url"
 	"strings"
 
@@ -14,43 +15,51 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
-// KubeExecutor is an Executor capable of executing remote commands within containers
-type KubeExecutor int
+type ExecOptions struct {
+	PodName   string
+	Container string
+	Namespace string
+}
 
-const (
-	// a built-in Executor relying on SPDY
-	SPDYExecutor = iota
+// RemoteExecutor defines the interface accepted by the Exec command - provided for test stubbing
+type RemoteExecutor interface {
+	Execute(url *url.URL, restConfig *rest.Config, stdout, stderr io.Writer) error
+}
 
-	// the default Executor using WebSockets
-	WebSocketExecutor
+// DefaultRemoteExecutor is the standard implementation of remote command execution
+type DefaultRemoteExecutor struct{}
 
-	// an alias for the default Executor using WebSockets unless the feature is disabled
-	FallbackExecutor
-)
+// Execute implements the RemoteExecutor interface for the DefaultRemoteExecutor
+func (*DefaultRemoteExecutor) Execute(url *url.URL, restConfig *rest.Config, stdout, stderr io.Writer) error {
+	exec, err := createExecutor(url, restConfig)
+	if err != nil {
+		return err
+	}
 
-// Enum string representation
-func (e KubeExecutor) String() string {
-	return [...]string{"SPDY", "WebSocket", "Fallback"}[e]
+	return exec.StreamWithContext(context.Background(), remotecommand.StreamOptions{
+		Stdout: stdout,
+		Stderr: stderr,
+		Tty:    false,
+	})
 }
 
 // Exec executes a command within the container of a specific Pod in the current namespace
 // configured for the client. If another namespace is required the ExecInNamespace helper
 // provides an escape hatch
-func (c *KubeClient) Exec(command, container, pod string) (string, string, error) {
+func (c *KubeClient) Exec(command string, opts *ExecOptions) (string, string, error) {
 	var err error
 	var stdOut, stdErr bytes.Buffer
 
 	args := strings.Fields(command)
-
-	req := c.kcs.CoreV1().
+	req := c.client.CoreV1().
 		RESTClient().
 		Post().
 		Resource("pods").
-		Name(pod).
-		Namespace(c.namespace).
+		Name(opts.PodName).
+		Namespace(opts.Namespace).
 		SubResource("exec").
 		VersionedParams(&v1.PodExecOptions{
-			Container: container,
+			Container: opts.Container,
 			Command:   args,
 			Stdin:     false,
 			Stdout:    true,
@@ -58,58 +67,32 @@ func (c *KubeClient) Exec(command, container, pod string) (string, string, error
 			TTY:       false,
 		}, scheme.ParameterCodec)
 
-	exec, err := createExecutor(req.URL(), c.krc, SPDYExecutor)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	ctx := context.Background()
-	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-		Stdout: &stdOut,
-		Stderr: &stdErr,
-		Tty:    false,
-	})
-
-	if err != nil {
+	if err = c.executor.Execute(req.URL(), c.config, &stdOut, &stdErr); err != nil {
 		return "", "", fmt.Errorf("error in Kubernetes exec Stream: %v", err.Error())
 	}
 
 	return stdOut.String(), stdErr.String(), nil
 }
 
-// ExecInNamspace executes a command in a custom namespace instead of using the on that was initially configured
-// for the KubeClient
-func (c *KubeClient) ExecInNamespace(command, container, pod, namespace string) (string, string, error) {
-	c.namespace = namespace
-	return c.Exec(command, container, pod)
-}
-
-// crateExecutor creates a Kubernetes remote Executor for use with the Exec or ExecInNamspace client methods
+// createExecutor creates a Kubernetes remote Executor for use with the Exec client methods. The function is scoped
+// to WebSocketExecutors and as such isn't compatible with the Kubernetes KUBECTL_REMOTE_COMMAND_WEBSOCKETS feature
+// gate.
+//
 // NOTE: This function is largely analogous to the implementation within the `kubectl exec` command
 // ref: https://github.com/kubernetes/kubernetes/blob/master/staging/src/k8s.io/kubectl/pkg/cmd/exec/exec.go#L138
-func createExecutor(url *url.URL, config *rest.Config, executor KubeExecutor) (remotecommand.Executor, error) {
-	var exec, websocketExec remotecommand.Executor = nil, nil
+func createExecutor(url *url.URL, config *rest.Config) (remotecommand.Executor, error) {
+	var exec remotecommand.Executor = nil
 	var err error
 
-	switch executor {
-
-	case SPDYExecutor:
-		exec, err = remotecommand.NewSPDYExecutor(config, "POST", url)
-
-	case WebSocketExecutor:
-		exec, err = remotecommand.NewWebSocketExecutor(config, "GET", url.String())
-
-	case FallbackExecutor:
-		// Fallback executor is default, unless feature flag is explicitly disabled.
-		websocketExec, err = remotecommand.NewWebSocketExecutor(config, "GET", url.String())
-		if err != nil {
-			break
-		}
-
-		exec, err = remotecommand.NewFallbackExecutor(websocketExec, exec, func(err error) bool {
-			return httpstream.IsUpgradeFailure(err) || httpstream.IsHTTPSProxyError(err)
-		})
+	// Fallback executor is default, unless feature flag is explicitly disabled.
+	exec, err = remotecommand.NewWebSocketExecutor(config, "GET", url.String())
+	if err != nil {
+		return nil, err
 	}
+
+	exec, err = remotecommand.NewFallbackExecutor(exec, exec, func(err error) bool {
+		return httpstream.IsUpgradeFailure(err) || httpstream.IsHTTPSProxyError(err)
+	})
 
 	if err != nil {
 		return nil, err
