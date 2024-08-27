@@ -29,17 +29,23 @@ var (
 // ref: https://github.com/anthhub/forwarder
 
 type KubeClient struct {
-	// config is the configuration file path for which the current client(-set) was created
-	config string
+	// configPath is the configuration file path for which the current client(-set) was created
+	configPath string
+
+	// executor is the connection between local and remote IO streams
+	executor RemoteExecutor
+
+	// portForwarder is the implementation for the port-forward functionality
+	portForwarder PortForwarder
 
 	// namespace is the Kubernetes namespace the client is configured to access
 	namespace string
 
-	// krc is the embedded rest.Config for which the client was built
-	krc *rest.Config
+	// restConfig is the rest.Config for which the client was built
+	config *rest.Config
 
-	// cs is the embedded Kubernetes ClientSet
-	kcs *kubernetes.Clientset
+	// clientSet is the embedded Kubernetes ClientSet
+	client *kubernetes.Clientset
 }
 
 // Opt represents a configuration option for the KubeClient
@@ -49,13 +55,18 @@ type Opt func(c *KubeClient)
 func NewClient(opts ...Opt) (*KubeClient, error) {
 	var err error
 
-	kc := &KubeClient{}
+	kc := &KubeClient{
+		executor:      &DefaultRemoteExecutor{},
+		portForwarder: &DefaultPortForwarder{},
+	}
+
 	for _, opt := range opts {
 		opt(kc)
 	}
 
-	if kc.config == "" {
-		kc.config, err = findKubeConfig()
+	// if WithConfigPath wasn't in the opts
+	if kc.configPath == "" {
+		kc.configPath, err = findKubeConfig()
 		if err != nil {
 			return nil, err
 		}
@@ -65,12 +76,12 @@ func NewClient(opts ...Opt) (*KubeClient, error) {
 		kc.namespace = DefaultNamespace
 	}
 
-	conf, err := clientcmd.BuildConfigFromFlags("", kc.config)
+	conf, err := clientcmd.BuildConfigFromFlags("", kc.configPath)
 	if err != nil {
 		return nil, err
 	}
 
-	kc.kcs, err = kubernetes.NewForConfig(conf)
+	kc.client, err = kubernetes.NewForConfig(conf)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +93,7 @@ func NewClient(opts ...Opt) (*KubeClient, error) {
 // This avoids the usual searches done within findKubeConfig
 func WithConfigPath(path string) func(c *KubeClient) {
 	return func(c *KubeClient) {
-		c.config = path
+		c.configPath = path
 	}
 }
 
