@@ -3,12 +3,13 @@ package platform
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
-	kubehome "k8s.io/client-go/util/homedir"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+	kubehome "k8s.io/client-go/util/homedir"
 )
 
 var (
@@ -77,6 +78,7 @@ func New(opts ...Opt) *Platform {
 		panic(err)
 	}
 
+	// build and configure the Platform
 	c := &Platform{
 		app:        DefaultApplicationName,
 		executable: bin,
@@ -85,6 +87,13 @@ func New(opts ...Opt) *Platform {
 
 	for _, opt := range opts {
 		opt(c)
+	}
+
+	// validate the config path
+	c.configPath, err = c.findConfigFile()
+	c.exists = errors.Is(err, os.ErrNotExist)
+	if err != nil {
+		fmt.Printf("configuration file: %s does not exist", c.configPath)
 	}
 
 	// keep in line with Windows style decisions
@@ -235,7 +244,7 @@ func (p *Platform) findConfigFile() (string, error) {
 
 	if _, err := os.Stat(p.configPath); errors.Is(err, os.ErrNotExist) {
 		p.exists = false
-		return "", errors.New("config file not found")
+		return "", fmt.Errorf("config file: %s does not exist", p.configPath)
 	} else {
 		p.exists = true
 		return p.configPath, nil
