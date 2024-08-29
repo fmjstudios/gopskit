@@ -3,11 +3,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "tools",
     srcs = [
+        "helm.go",
         "helmfile.go",
         "smallstep.go",
+        "tools.go",
     ],
     importpath = "github.com/fmjstudios/gopskit/pkg/tools",
     visibility = ["//visibility:public"],
+    deps = ["@com_github_go_resty_resty_v2//:resty"],
 )
 
 alias(
