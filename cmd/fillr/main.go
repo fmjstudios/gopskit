@@ -2,28 +2,42 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	_ "github.com/fmjstudios/gopskit/pkg/stamp"
 	"github.com/fmjstudios/gopskit/pkg/tools"
 )
 
 func main() {
-	// dir, err := filesystem.TempDir("fillr")
-	// if err != nil {
-	// 	fmt.Println(err)
+	// m := map[string]interface{}{
+	// 	"hello":      "from where?",
+	// 	"definitely": "from the other side",
 	// }
 
-	// defer filesystem.Remove(dir)
+	// m2 := map[string]interface{}{
+	// 	"hello":      "from where, by who?",
+	// 	"mostLikely": "from the other side",
+	// }
 
-	// fmt.Printf("Created temporary directory: %s", dir)
+	// err := util.DeepMergeMap(m, m2)
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
 
-	// Tools
-	m, err := tools.Find()
+	path := os.Args[1]
+	mp, err := tools.AddSecretValue(path, ".whatever", true)
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 
-	for k, v := range m {
-		fmt.Printf("Tool: %s - Location: %s\n", k, v)
+	for k, v := range mp {
+		fmt.Printf("Key: %s - Value: %s\n", k, v)
 	}
+
+	// value, err := tools.GetSecretValue(path, ".kubectl.image.tag", true)
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
+
+	// fmt.Printf("value: %s\n", value)
 }

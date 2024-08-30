@@ -28,3 +28,9 @@ use_repo(
     "org_golang_x_text",
     "org_uber_go_zap",
 )
+
+# DO NOT REMOVE! Cannot build with Resty without this
+# ref: https://github.com/bazelbuild/bazel-gazelle/issues/1885
+go_deps.gazelle_override(
+    path = "github.com/go-resty/resty/v2",
+)
