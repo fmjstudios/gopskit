@@ -1,18 +1,14 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "util",
-    srcs = [
-        "crypto.go",
-        "merge.go",
-    ],
-    importpath = "github.com/fmjstudios/gopskit/pkg/util",
+    name = "errors",
+    srcs = ["errors.go"],
+    importpath = "github.com/fmjstudios/gopskit/pkg/errors",
     visibility = ["//visibility:public"],
-    deps = ["//pkg/core"],
 )
 
 alias(
     name = "go_default_library",
-    actual = ":util",
+    actual = ":errors",
     visibility = ["//visibility:public"],
 )

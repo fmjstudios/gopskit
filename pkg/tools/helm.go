@@ -3,8 +3,11 @@ package tools
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/fmjstudios/gopskit/pkg/core"
 	"github.com/fmjstudios/gopskit/pkg/filesystem"
+	"github.com/fmjstudios/gopskit/pkg/util"
 	"github.com/go-resty/resty/v2"
 	"github.com/vmware-labs/yaml-jsonpath/pkg/yamlpath"
 	"golang.org/x/mod/semver"
@@ -40,6 +43,7 @@ var (
 // ValidateHelmPlugins checks if the required Helm Plugins "diff" and "secrets" are currently installed
 func ValidateHelmPlugins(plugins ...HelmPlugin) error {
 	// use (built-in) const if no args are passed
+	e := core.NewExecutor(core.WithInheritedEnv())
 	if len(plugins) == 0 {
 		plugins = helmPlugins
 	}
@@ -47,12 +51,12 @@ func ValidateHelmPlugins(plugins ...HelmPlugin) error {
 	for _, v := range plugins {
 		switch v {
 		case diff:
-			_, err := Exec("helm", diff.String(), "version")
+			_, _, err := e.Execute(strings.Join([]string{"helm", diff.String(), "version"}, " "))
 			if err != nil {
 				return err
 			}
 		case secrets:
-			_, err := Exec("helm", secrets.String(), "--version")
+			_, _, err := e.Execute(strings.Join([]string{"helm", secrets.String(), "--version"}, " "))
 			if err != nil {
 				return err
 			}
@@ -65,6 +69,7 @@ func ValidateHelmPlugins(plugins ...HelmPlugin) error {
 // HelmPluginVersion retrieves the versions for all or some of the required Helm Plugins
 func HelmPluginVersion(plugins ...HelmPlugin) (map[HelmPlugin]string, error) {
 	var diffVer, secretsVer string
+	e := core.NewExecutor(core.WithInheritedEnv())
 
 	// use (built-in) const if no args are passed
 	if len(plugins) == 0 {
@@ -80,11 +85,17 @@ func HelmPluginVersion(plugins ...HelmPlugin) (map[HelmPlugin]string, error) {
 	for _, v := range plugins {
 		switch v {
 		case diff:
-			res, _ := Exec("helm", diff.String(), "version")
-			diffVer = res.StdOut
+			stdOut, _, err := e.Execute(strings.Join([]string{"helm", diff.String(), "version"}, " "))
+			if err != nil {
+				return nil, err
+			}
+			diffVer = stdOut
 		case secrets:
-			res, _ := Exec("helm", secrets.String(), "--version")
-			secretsVer = res.StdOut
+			stdOut, _, err := e.Execute(strings.Join([]string{"helm", secrets.String(), "--version"}, " "))
+			if err != nil {
+				return nil, err
+			}
+			secretsVer = stdOut
 		}
 	}
 
@@ -129,12 +140,13 @@ func HelmPluginRequiresUpdate(token string, plugins ...HelmPlugin) (map[HelmPlug
 
 // func HelmPluginInstall installs a Helm Plugin from it's remote source
 func HelmPluginInstall(p HelmPlugin, version string) error {
+	e := core.NewExecutor(core.WithInheritedEnv())
 	if !semver.IsValid(version) {
 		return fmt.Errorf("cannot install Helm Plugin %s at invalid version: %v", p.String(), version)
 	}
 
 	installArgs := []string{"helm", "plugin", "install", p.String(), helmPluginsRepoMap[p], "--version", tagFromVersion(version)}
-	_, err := Exec(installArgs...)
+	_, _, err := e.Execute(strings.Join(installArgs, " "))
 	if err != nil {
 		return err
 	}
@@ -144,13 +156,14 @@ func HelmPluginInstall(p HelmPlugin, version string) error {
 
 // func HelmPluginUninstall uninstalls a Helm Plugin
 func HelmPluginUninstall(p HelmPlugin) error {
+	e := core.NewExecutor(core.WithInheritedEnv())
 	err := ValidateHelmPlugins(p)
 	if err != nil {
 		return err
 	}
 
 	uninstallArgs := []string{"helm", "plugin", "uninstall", p.String()}
-	_, err = Exec(uninstallArgs...)
+	_, _, err = e.Execute(strings.Join(uninstallArgs, " "))
 	if err != nil {
 		return err
 	}
@@ -211,12 +224,13 @@ func GetFileState(path string) (FileState, error) {
 
 // EncryptFile encrypts a file using the Helm Secrets Plugin
 func EncryptFile(path string) error {
+	e := core.NewExecutor(core.WithInheritedEnv())
 	if ok := filesystem.CheckIfExists(path); !ok {
 		return fmt.Errorf("cannot encrypt non-existing file: %s", path)
 	}
 
 	args := []string{"helm", secrets.String(), "encrypt", "-i", path}
-	_, err := Exec(args...)
+	_, _, err := e.Execute(strings.Join(args, " "))
 	if err != nil {
 		return err
 	}
@@ -226,12 +240,13 @@ func EncryptFile(path string) error {
 
 // DecryptFile decrypts a file using the Helm Secrets Plugin
 func DecryptFile(path string) error {
+	e := core.NewExecutor(core.WithInheritedEnv())
 	if ok := filesystem.CheckIfExists(path); !ok {
 		return fmt.Errorf("cannot decrypt non-existing file: %s", path)
 	}
 
 	args := []string{"helm", secrets.String(), "encrypt", "-i", path}
-	_, err := Exec(args...)
+	_, _, err := e.Execute(strings.Join(args, " "))
 	if err != nil {
 		return err
 	}
@@ -293,11 +308,12 @@ func GetSecretValue(path, jsonPath string, unencrypted bool) (string, error) {
 	return nodes[0].Value, nil
 }
 
-// ref: https://github.com/elastic/beats/blob/6435194af9f42cbf778ca0a1a92276caf41a0da8/libbeat/common/mapstr.go
-type MapStr map[string]interface{}
-
-func AddSecretValue(path, jsonPath string, unencrypted bool) (map[string]interface{}, error) {
+// AddSecretValue initializes a data map to an existing data object
+func AddSecretValue(path string, data map[string]interface{}, unencrypted bool) (map[string]interface{}, error) {
 	var root map[string]interface{}
+	var comp = map[string]interface{}{
+		"secrets": data,
+	}
 
 	if ok := filesystem.CheckIfExists(path); !ok {
 		return nil, fmt.Errorf("cannot add value to non-existing file: %s", path)
@@ -319,24 +335,19 @@ func AddSecretValue(path, jsonPath string, unencrypted bool) (map[string]interfa
 		return nil, err
 	}
 
-	if err := yaml.Unmarshal(content, root); err != nil {
+	if err := yaml.Unmarshal(content, &root); err != nil {
 		return nil, err
 	}
 
-	// yp, err := yamlpath.NewPath(jsonPath)
-	// if err != nil {
-	// 	return "", err
-	// }
+	if err := util.DeepMergeMap(root, comp); err != nil {
+		return nil, err
+	}
 
-	// nodes, err := yp.Find(&root)
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// value does not exist
-	// if len(nodes) < 1 {
-	// 	return "", fmt.Errorf("wtf man...")
-	// }
+	if !unencrypted {
+		if err := EncryptFile(path); err != nil {
+			return nil, err
+		}
+	}
 
 	return root, nil
 }

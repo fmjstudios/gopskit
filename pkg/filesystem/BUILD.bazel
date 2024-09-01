@@ -6,6 +6,7 @@ go_library(
         "directories.go",
         "files.go",
         "filesystem.go",
+        "git.go",
     ],
     importpath = "github.com/fmjstudios/gopskit/pkg/filesystem",
     visibility = ["//visibility:public"],

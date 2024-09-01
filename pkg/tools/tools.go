@@ -6,18 +6,11 @@
 package tools
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"os"
-	"os/exec"
-	"os/signal"
 	"strings"
-	"syscall"
 
+	"github.com/fmjstudios/gopskit/pkg/core"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -53,7 +46,7 @@ func Find() (map[Executable]string, error) {
 	t := make(map[Executable]string)
 
 	for _, v := range executables {
-		path, err := LookPath(v.String())
+		path, err := core.LookPath(v.String())
 		if err != nil {
 			return nil, fmt.Errorf("could not find tool: %s. error: %v", v, err)
 		}
@@ -62,92 +55,6 @@ func Find() (map[Executable]string, error) {
 	}
 
 	return t, nil
-}
-
-// LookPath is a safer alternative to the direct use of exec.LookPath, which mitigates issues caused by
-// non-nil errors due to the fact that the Go runtime resolved the executable to the current directory instead
-// of a generic location in $PATH
-func LookPath(path string) (string, error) {
-	path, err := exec.LookPath(path)
-	if errors.Is(err, exec.ErrDot) {
-		return path, nil
-	}
-
-	return path, err
-}
-
-// execResult is the result of executing a command via Exec
-type execResult struct {
-	Command string
-	Bin     string
-	Args    []string
-	StdOut  string
-	StdErr  string
-	RC      int
-	Error   error
-}
-
-// Exec executes a command within the current environment (akin to shell) and either returns an
-// error if any occurred of an execResult object containing the exit code a copy of the error,
-// as well as the string output of the command for StdOut and StdErr
-//
-// If the program in the command isn't installed we fail fast instead of trying to execute a command
-// that does not exist on the system.
-//
-// Exec allows for the cancellation of a running command via CTRL+C (SIGINT).
-func Exec(command ...string) (*execResult, error) {
-	var args []string
-	var stdOut, stdErr bytes.Buffer
-	var cmdErr error = nil
-
-	args = command
-	if len(command) <= 1 {
-		args = strings.Fields(command[0])
-	}
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	defer cancelCtx()
-
-	// allow CTRL+C
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGINT)
-	go func() {
-		<-c
-		cancelCtx()
-		fmt.Printf("execution of command: '%s' was cancelled via CTRL+C", shortenedCommand(args...))
-	}()
-
-	// sanity
-	bin, err := LookPath(args[0])
-	if err != nil {
-		return nil, fmt.Errorf("no such binary or executable in PATH: %s. cannot execute non-existent program", bin)
-	}
-
-	cmd := exec.CommandContext(ctx, bin, args[1:]...)
-	cmd.Stderr = io.MultiWriter(os.Stderr, &stdErr)
-	cmd.Stdout = io.MultiWriter(os.Stdout, &stdOut)
-	err = cmd.Start()
-	if err != nil {
-		return nil, err
-	}
-
-	if err := cmd.Wait(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			cmdErr = exitErr
-		} else {
-			cmdErr = err
-		}
-	}
-
-	return &execResult{
-		Command: shortenedCommand(args...),
-		Bin:     bin,
-		Args:    args[1:],
-		StdOut:  stdOut.String(),
-		StdErr:  stdErr.String(),
-		RC:      cmd.ProcessState.ExitCode(),
-		Error:   cmdErr,
-	}, nil
 }
 
 // releaseResponse represents a GitHub API response
@@ -196,22 +103,6 @@ func parseGitHubURL(url string) (string, string, error) {
 
 	ss := strings.Split(s, "/")
 	return ss[0], ss[1], nil
-}
-
-// shortenedCommand creates a short representation of a command in order to produce valuable
-// debug or info messages without exposing all of the arguments passed in. The func also handles
-// cases where entire strings are passed in by splitting the argument if it's only a single one
-func shortenedCommand(s ...string) string {
-	var strs []string
-	if len(s) == 1 {
-		strs = strings.Fields(s[0])
-	}
-
-	if len(strs) <= 2 {
-		return fmt.Sprintf("%s ...", strs)
-	} else {
-		return fmt.Sprintf("%s ...", strs[:3])
-	}
 }
 
 // Trim the v from the GitHub Tag

@@ -2,42 +2,70 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/fmjstudios/gopskit/pkg/stamp"
 	"github.com/fmjstudios/gopskit/pkg/tools"
+	"github.com/fmjstudios/gopskit/pkg/util"
 )
 
 func main() {
-	// m := map[string]interface{}{
-	// 	"hello":      "from where?",
-	// 	"definitely": "from the other side",
-	// }
+	// YAML Merge
 
-	// m2 := map[string]interface{}{
-	// 	"hello":      "from where, by who?",
-	// 	"mostLikely": "from the other side",
-	// }
+	// path := os.Args[1]
 
-	// err := util.DeepMergeMap(m, m2)
+	// mp, err := tools.AddSecretValue(path, map[string]interface{}{
+	// 	"hooks": map[string]interface{}{
+	// 		"awxToken":       "fick dich",
+	// 		"kubescapeToken": "bastard",
+	// 		"vaultToken":     "thisIsANewValue",
+	// 	},
+	// }, true)
+
 	// if err != nil {
 	// 	panic(err.Error())
 	// }
 
-	path := os.Args[1]
-	mp, err := tools.AddSecretValue(path, ".whatever", true)
+	// for k, v := range mp {
+	// 	fmt.Printf("Key: %s - Value: %s\n", k, v)
+	// }
+
+	// content, err := yaml.Marshal(mp)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// if err := os.WriteFile("/tmp/gopskit-test/fillr-out-values.yaml", content, 0644); err != nil {
+	// 	panic(err)
+	// }
+
+	// GIT
+
+	// dir, err := os.Getwd()
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// git, err := filesystem.RevParseGitRoot(dir)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// fmt.Printf("Found Git directory at: %s\n", git)
+
+	// SmallStep
+	res, err := tools.GenerateStepValues()
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err)
+	}
+
+	mp, err := tools.AddSecretStepValues(res, util.GeneratePassphrase(util.WithLength(48)), os.Args[1])
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	for k, v := range mp {
 		fmt.Printf("Key: %s - Value: %s\n", k, v)
 	}
-
-	// value, err := tools.GetSecretValue(path, ".kubectl.image.tag", true)
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
-
-	// fmt.Printf("value: %s\n", value)
 }
