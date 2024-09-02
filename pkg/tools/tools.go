@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fmjstudios/gopskit/pkg/core"
+	"github.com/fmjstudios/gopskit/pkg/cmd"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -46,7 +46,7 @@ func Find() (map[Executable]string, error) {
 	t := make(map[Executable]string)
 
 	for _, v := range executables {
-		path, err := core.LookPath(v.String())
+		path, err := cmd.LookPath(v.String())
 		if err != nil {
 			return nil, fmt.Errorf("could not find tool: %s. error: %v", v, err)
 		}

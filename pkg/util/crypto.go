@@ -7,7 +7,7 @@ import (
 	"math/rand/v2"
 	"strings"
 
-	"github.com/fmjstudios/gopskit/pkg/core"
+	"github.com/fmjstudios/gopskit/pkg/cmd"
 )
 
 type PassphraseConfig struct {
@@ -79,7 +79,7 @@ func GenerateDiffieHellmanParams(opts ...DiffieHellmanOpt) (string, error) {
 	var params string
 
 	// sanity
-	_, err := core.LookPath("openssl")
+	_, err := cmd.LookPath("openssl")
 	if err != nil {
 		return "", fmt.Errorf("openssl is not installed on the system")
 	}
@@ -96,8 +96,8 @@ func GenerateDiffieHellmanParams(opts ...DiffieHellmanOpt) (string, error) {
 	args := []string{"openssl", "dhparam", fmt.Sprintf("%d", cfg.Bits)}
 	var bufStdO, bufStdE bytes.Buffer
 
-	e := core.NewExecutor(core.WithInheritedEnv())
-	_, _, err = e.Execute(strings.Join(args, " "), core.WithWriters(bufStdO, bufStdE))
+	e := cmd.NewExecutor(cmd.WithInheritedEnv())
+	_, _, err = e.Execute(strings.Join(args, " "), cmd.WithWriters(bufStdO, bufStdE))
 	if err != nil {
 		return "", err
 	}

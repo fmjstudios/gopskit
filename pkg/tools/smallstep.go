@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fmjstudios/gopskit/pkg/core"
+	"github.com/fmjstudios/gopskit/pkg/cmd"
 	"github.com/fmjstudios/gopskit/pkg/filesystem"
 	"github.com/fmjstudios/gopskit/pkg/util"
 	"gopkg.in/yaml.v3"
@@ -55,7 +55,7 @@ func WithDeploymentType(deploymentType string) func(cfg *StepValuesConfig) {
 
 func GenerateStepValues(opts ...StepValuesOpt) (*StepHelmValues, error) {
 	// sanity
-	_, err := core.LookPath("step")
+	_, err := cmd.LookPath("step")
 	if err != nil {
 		return nil, fmt.Errorf("step CLI is not installed or available in PATH. cannot continue")
 	}
@@ -106,8 +106,8 @@ func GenerateStepValues(opts ...StepValuesOpt) (*StepHelmValues, error) {
 		"--provisioner",
 		cfg.Provisioner,
 	}
-	e := core.NewExecutor()
-	_, _, err = e.Execute(strings.Join(args, " "), core.WithOutputFiles(valPath))
+	e := cmd.NewExecutor()
+	_, _, err = e.Execute(strings.Join(args, " "), cmd.WithOutputFiles(valPath))
 	if err != nil {
 		return nil, err
 	}

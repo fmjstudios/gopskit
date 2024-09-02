@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fmjstudios/gopskit/pkg/core"
+	"github.com/fmjstudios/gopskit/pkg/cmd"
 	"github.com/fmjstudios/gopskit/pkg/filesystem"
 	"github.com/fmjstudios/gopskit/pkg/util"
 	"github.com/go-resty/resty/v2"
@@ -43,7 +43,7 @@ var (
 // ValidateHelmPlugins checks if the required Helm Plugins "diff" and "secrets" are currently installed
 func ValidateHelmPlugins(plugins ...HelmPlugin) error {
 	// use (built-in) const if no args are passed
-	e := core.NewExecutor(core.WithInheritedEnv())
+	e := cmd.NewExecutor(cmd.WithInheritedEnv())
 	if len(plugins) == 0 {
 		plugins = helmPlugins
 	}
@@ -69,7 +69,7 @@ func ValidateHelmPlugins(plugins ...HelmPlugin) error {
 // HelmPluginVersion retrieves the versions for all or some of the required Helm Plugins
 func HelmPluginVersion(plugins ...HelmPlugin) (map[HelmPlugin]string, error) {
 	var diffVer, secretsVer string
-	e := core.NewExecutor(core.WithInheritedEnv())
+	e := cmd.NewExecutor(cmd.WithInheritedEnv())
 
 	// use (built-in) const if no args are passed
 	if len(plugins) == 0 {
@@ -140,7 +140,7 @@ func HelmPluginRequiresUpdate(token string, plugins ...HelmPlugin) (map[HelmPlug
 
 // func HelmPluginInstall installs a Helm Plugin from it's remote source
 func HelmPluginInstall(p HelmPlugin, version string) error {
-	e := core.NewExecutor(core.WithInheritedEnv())
+	e := cmd.NewExecutor(cmd.WithInheritedEnv())
 	if !semver.IsValid(version) {
 		return fmt.Errorf("cannot install Helm Plugin %s at invalid version: %v", p.String(), version)
 	}
@@ -156,7 +156,7 @@ func HelmPluginInstall(p HelmPlugin, version string) error {
 
 // func HelmPluginUninstall uninstalls a Helm Plugin
 func HelmPluginUninstall(p HelmPlugin) error {
-	e := core.NewExecutor(core.WithInheritedEnv())
+	e := cmd.NewExecutor(cmd.WithInheritedEnv())
 	err := ValidateHelmPlugins(p)
 	if err != nil {
 		return err
@@ -224,7 +224,7 @@ func GetFileState(path string) (FileState, error) {
 
 // EncryptFile encrypts a file using the Helm Secrets Plugin
 func EncryptFile(path string) error {
-	e := core.NewExecutor(core.WithInheritedEnv())
+	e := cmd.NewExecutor(cmd.WithInheritedEnv())
 	if ok := filesystem.CheckIfExists(path); !ok {
 		return fmt.Errorf("cannot encrypt non-existing file: %s", path)
 	}
@@ -240,7 +240,7 @@ func EncryptFile(path string) error {
 
 // DecryptFile decrypts a file using the Helm Secrets Plugin
 func DecryptFile(path string) error {
-	e := core.NewExecutor(core.WithInheritedEnv())
+	e := cmd.NewExecutor(cmd.WithInheritedEnv())
 	if ok := filesystem.CheckIfExists(path); !ok {
 		return fmt.Errorf("cannot decrypt non-existing file: %s", path)
 	}
