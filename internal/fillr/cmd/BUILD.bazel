@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cmd",
+    srcs = ["cmd.go"],
+    importpath = "github.com/fmjstudios/gopskit/internal/fillr/cmd",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/fillr/app",
+        "//pkg/filesystem",
+        "//pkg/util",
+        "@com_github_spf13_cobra//:cobra",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cmd",
+    visibility = ["//:__subpackages__"],
+)

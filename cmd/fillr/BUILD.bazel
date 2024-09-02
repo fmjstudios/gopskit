@@ -14,9 +14,9 @@ go_library(
         "github.com/fmjstudios/gopskit/pkg/stamp.GoVersion": "{GO_VERSION}",
     },
     deps = [
+        "//internal/fillr/app",
+        "//internal/fillr/cmd",
         "//pkg/stamp",
-        "//pkg/tools",
-        "//pkg/util",
     ],
 )
 
