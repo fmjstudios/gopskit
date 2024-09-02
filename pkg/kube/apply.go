@@ -38,7 +38,7 @@ func (c *KubeClient) Apply(schema schema.GroupVersionResource, resource *unstruc
 			return err
 		}
 
-		fmt.Printf(`Created Kubernetes Resource: %v named %v`, result.GetKind(), result.GetName())
+		fmt.Printf(`Created Kubernetes Resource: %v named %v\n`, result.GetKind(), result.GetName())
 		return nil
 	}
 
@@ -47,6 +47,6 @@ func (c *KubeClient) Apply(schema schema.GroupVersionResource, resource *unstruc
 		return err
 	}
 
-	fmt.Printf(`Updated Kubernetes Resource: %v named %v`, result.GetKind(), result.GetName())
+	fmt.Printf(`Updated Kubernetes Resource: %v named %v\n`, result.GetKind(), result.GetName())
 	return nil
 }
