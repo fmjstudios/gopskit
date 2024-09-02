@@ -1,9 +1,9 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
-    name = "vaultr_lib",
+    name = "waltr_lib",
     srcs = ["main.go"],
-    importpath = "github.com/fmjstudios/gopskit/cmd/vaultr",
+    importpath = "github.com/fmjstudios/gopskit/cmd/waltr",
     visibility = ["//visibility:private"],
     x_defs = {
         "github.com/fmjstudios/gopskit/pkg/stamp.Version": module_version(),
@@ -14,14 +14,15 @@ go_library(
         "github.com/fmjstudios/gopskit/pkg/stamp.GoVersion": "{GO_VERSION}",
     },
     deps = [
-        "//internal/vaultr/cmd",
+        "//internal/waltr/app",
+        "//internal/waltr/cmd",
         "//pkg/stamp",
     ],
 )
 
 go_binary(
-    name = "vaultr",
-    out = "vaultr",
-    embed = [":vaultr_lib"],
+    name = "waltr",
+    out = "waltr",
+    embed = [":waltr_lib"],
     visibility = ["//visibility:public"],
 )
