@@ -3,10 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "cmd",
     srcs = ["cmd.go"],
-    importpath = "github.com/fmjstudios/gopskit/internal/opsctl/cmd",
+    importpath = "github.com/fmjstudios/gopskit/internal/ssolo/cmd",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//pkg/platform",
+        "//internal/ssolo/app",
         "@com_github_spf13_cobra//:cobra",
     ],
 )

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "app",
+    srcs = ["app.go"],
+    importpath = "github.com/fmjstudios/gopskit/internal/ssolo/app",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//pkg/cmd",
+        "//pkg/common",
+        "//pkg/kube",
+        "//pkg/logger",
+        "//pkg/platform",
+        "//pkg/stamp",
+        "@org_uber_go_zap//:zap",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":app",
+    visibility = ["//:__subpackages__"],
+)
