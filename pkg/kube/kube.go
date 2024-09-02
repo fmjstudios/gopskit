@@ -22,12 +22,6 @@ var (
 	}
 )
 
-// ref: https://github.com/iximiuz/client-go-examples/blob/main/kubeconfig-from-yaml/main.go
-// ref: https://github.com/a4abhishek/Client-Go-Examples/blob/master/exec_to_pod/exec_to_pod.go
-// ref: https://miminar.fedorapeople.org/_preview/openshift-enterprise/registry-redeploy/go_client/executing_remote_processes.html
-// ref: https://github.com/gianarb/kube-port-forward/blob/master/main.go
-// ref: https://github.com/anthhub/forwarder
-
 type KubeClient struct {
 	// configPath is the configuration file path for which the current client(-set) was created
 	configPath string
