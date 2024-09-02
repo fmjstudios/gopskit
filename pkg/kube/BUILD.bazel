@@ -11,7 +11,7 @@ go_library(
         "port_forward.go",
     ],
     importpath = "github.com/fmjstudios/gopskit/pkg/kube",
-    visibility = ["//visibility:private"],
+    visibility = ["//visibility:public"],
     deps = [
         "//pkg/filesystem",
         "//pkg/platform",
@@ -36,5 +36,5 @@ go_library(
 alias(
     name = "go_default_library",
     actual = ":kube",
-    visibility = ["//visibility:private"],
+    visibility = ["//visibility:public"],
 )
