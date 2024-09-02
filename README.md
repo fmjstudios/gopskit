@@ -1,4 +1,4 @@
-# GOpsKit <img src="https://raw.githubusercontent.com/fmjstudios/artwork/0fbaea26cdaae204c9e6a03e5ec61d42d7b60cf7/projects/gopskit/icon/color/gopskit-icon-color.png" alt="GOpsKit Logo" align="right" width="225"/>
+# Go Ops Kit <img src="https://raw.githubusercontent.com/fmjstudios/artwork/0fbaea26cdaae204c9e6a03e5ec61d42d7b60cf7/projects/gopskit/icon/color/gopskit-icon-color.png" alt="GOpsKit Logo" align="right" width="225"/>
 
 `GOpsKit` (Go Ops Kit) is an open-source [MIT][license]-licensed [Go][go]-based toolkit for working with [Kubernetes]
 [kubernetes] Clusters `v1.26` and above. The project is built using Google's [Bazel][bazel] build system in
@@ -18,9 +18,11 @@ bazel build //...
 Like most modern [Go][go] projects the various executables are located within the [cmd][cmd] directory. Here's a
 quick-reference list as an overview:
 
-- [`opsctl`][opsctl]: manage SSO authentication for various apps and more
-- [`vault`][vaultr]: configure and manage [HashiCorp's Vault][vault]
+- [`ssolo`][ssolo]: manage SSO authentication for various apps using Keycloak
+- [`waltr`][waltr]: configure and manage [HashiCorp's Vault][vault]
 - [`fillr`][fillr]: create Helmfile templates automatically
+- [`steppa`][steppa]: generate and manage SmallStep PKI values
+- [`amtrac`][amtrac]: generate SQL dumps from the German KBA's data files using Docker
 
 ### 🔃 Contributing
 
@@ -37,9 +39,11 @@ This project is owned and maintained by [FMJ Studios][org] refer to the [`AUTHOR
 <!-- Project references -->
 
 [cmd]: cmd
-[opsctl]: cmd/opsctl
-[vaultr]: cmd/vaultr
+[ssolo]: cmd/ssolo
+[waltr]: cmd/waltr
 [fillr]: cmd/fillr
+[steppa]: cmd/steppa
+[amtrac]: cmd/amtrac
 
 <!-- File references -->
 
