@@ -2,7 +2,7 @@
 
 ## ➕ Additions
 
-- [ ] Add [`.bazelrc`](https://bazel.build/run/bazelrc)
+- [X] Add [`.bazelrc`](https://bazel.build/run/bazelrc)
 
 ## ✏️ Planned Changes
 
