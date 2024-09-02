@@ -1,9 +1,9 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
-    name = "opsctl_lib",
+    name = "ssolo_lib",
     srcs = ["main.go"],
-    importpath = "github.com/fmjstudios/gopskit/cmd/opsctl",
+    importpath = "github.com/fmjstudios/gopskit/cmd/ssolo",
     visibility = ["//visibility:private"],
     x_defs = {
         "github.com/fmjstudios/gopskit/pkg/stamp.Version": module_version(),
@@ -14,14 +14,15 @@ go_library(
         "github.com/fmjstudios/gopskit/pkg/stamp.GoVersion": "{GO_VERSION}",
     },
     deps = [
-        "//internal/opsctl/cmd",
+        "//internal/ssolo/app",
+        "//internal/ssolo/cmd",
         "//pkg/stamp",
     ],
 )
 
 go_binary(
-    name = "opsctl",
-    out = "opsctl",
-    embed = [":opsctl_lib"],
+    name = "ssolo",
+    out = "ssolo",
+    embed = [":ssolo_lib"],
     visibility = ["//visibility:public"],
 )
