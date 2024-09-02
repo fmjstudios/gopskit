@@ -68,7 +68,9 @@ type Platform struct {
 //
 // Another way of obtaining a Platform object is by using New with the corresponding options.
 func Current() *Platform {
-	return &Platform{}
+	p := &Platform{}
+	p.init()
+	return p
 }
 
 // New creates a fully initialized platform object using the specified Options
@@ -79,33 +81,35 @@ func New(opts ...Opt) *Platform {
 	}
 
 	// build and configure the Platform
-	c := &Platform{
+	p := &Platform{
 		app:        DefaultApplicationName,
 		executable: bin,
 		configType: DefaultConfigType,
 	}
 
 	for _, opt := range opts {
-		opt(c)
+		opt(p)
 	}
 
+	// find dirs
+	p.init()
+
 	// validate the config path
-	c.configPath, err = c.findConfigFile()
-	c.exists = errors.Is(err, os.ErrNotExist)
+	err = p.findConfigFile()
 	if err != nil {
-		fmt.Printf("configuration file: %s does not exist", c.configPath)
+		fmt.Printf("configuration file: %s does not exist\n", p.configPath)
 	}
 
 	// keep in line with Windows style decisions
 	if runtime.GOOS == "windows" {
-		c.app = cases.Title(language.Und, cases.Compact).String(c.app)
+		p.app = cases.Title(language.Und, cases.Compact).String(p.app)
 	}
 
-	if err := c.init(); err != nil {
+	if err := p.init(); err != nil {
 		panic(err)
 	}
 
-	return c
+	return p
 }
 
 // WithApp configures the Platform object with a custom application name
@@ -165,6 +169,8 @@ func (p *Platform) LogDir() string {
 	return p.logDir
 }
 
+// TODO(FMJdev): make this asynchronous
+//
 // init initializes the new Platform object by calling the needed methods
 // to fill the properties
 func (p *Platform) init() error {
@@ -238,15 +244,19 @@ func (p *Platform) determineCacheDir() (string, error) {
 }
 
 // findConfigFile tries to find a configuration file in the ConfigDir
-func (p *Platform) findConfigFile() (string, error) {
+func (p *Platform) findConfigFile() error {
 	dir := p.ConfigDir()
 	p.configPath = fmt.Sprintf("%s/%s.%s", dir, p.app, p.configType)
 
 	if _, err := os.Stat(p.configPath); errors.Is(err, os.ErrNotExist) {
+		// it doesn't need to exist since we can operate off of CLI flags/args
 		p.exists = false
-		return "", fmt.Errorf("config file: %s does not exist", p.configPath)
+		return nil
+	} else if err != nil {
+		p.exists = false
+		return fmt.Errorf("could not process  config file: %s", p.configPath)
 	} else {
 		p.exists = true
-		return p.configPath, nil
+		return nil
 	}
 }
