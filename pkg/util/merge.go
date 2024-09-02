@@ -1,5 +1,14 @@
 package util
 
+import (
+	"fmt"
+	"strings"
+)
+
+type Primitive interface {
+	bool | string | int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64 | float32 | float64 | complex64 | complex128
+}
+
 func DeepMergeMap(dst, src map[string]interface{}) error {
 	for srcK, srcV := range src {
 
@@ -35,4 +44,85 @@ func DeepMergeMap(dst, src map[string]interface{}) error {
 		}
 	}
 	return nil
+}
+
+const (
+	DELIMITER        string = "."
+	REPLACE_TEMPLATE string = "{{ .Values | get \"%s\" \"%v\" }}"
+)
+
+// TODO(FMJdev): add bump stop values which act as base case so we do not template Kubernetes labels etc.
+// Relying on recursion until we hit a primitive is highly error prone.
+func ReplaceRecursive(input map[string]interface{}, keys []string, output map[string]interface{}, template string) {
+	if template == "" {
+		template = REPLACE_TEMPLATE
+	}
+
+	for k, v := range input {
+		kp := make([]string, 0)
+		kp = append(kp, keys...)
+		if k != "" {
+			kp = append(kp, k)
+		}
+
+		tpl := func(args ...any) string {
+			return fmt.Sprintf(template, args...)
+		}
+
+		switch cur := v.(type) {
+		case map[string]interface{}:
+			// handle empty map
+			if len(cur) == 0 {
+				key := strings.Join(kp, DELIMITER)
+				// handle null values
+				value := v
+				if v == nil {
+					value = ""
+				}
+				output[k] = tpl(key, value)
+				continue
+			}
+
+			// it's a map, so  recurse
+			output[k] = make(map[string]interface{})
+			mRef := output[k].(map[string]interface{})
+			ReplaceRecursive(cur, kp, mRef, template)
+		default:
+			key := strings.Join(kp, DELIMITER)
+			// handle null values
+			value := v
+			if v == nil {
+				value = ""
+			}
+			output[k] = tpl(key, value)
+		}
+	}
+}
+
+func SanitizeSlice(slice []string) []string {
+	var copy = slice
+	for i, v := range slice {
+		if v == "" {
+			remove(copy, i)
+		}
+	}
+	return copy
+}
+
+func remove(slice []string, i int) []string {
+	return append(slice[:i], slice[i+1:]...)
+}
+
+func CopyMap(m map[string]interface{}) map[string]interface{} {
+	cp := make(map[string]interface{})
+	for k, v := range m {
+		vm, ok := v.(map[string]interface{})
+		if ok {
+			cp[k] = CopyMap(vm)
+		} else {
+			cp[k] = v
+		}
+	}
+
+	return cp
 }
