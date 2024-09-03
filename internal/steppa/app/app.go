@@ -8,9 +8,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const APP_NAME = "steppa"
+const (
+	Name = "steppa"
+)
 
-type AppOpt func(a *App)
+type Opt func(a *App)
 
 // type App is the implementation for the `steppa` command-line application
 type App struct {
@@ -39,19 +41,26 @@ type App struct {
 }
 
 // New creates a newly initialized instance of the App type
-func New(opts ...AppOpt) *App {
-	platform := platform.New(platform.WithApp(APP_NAME))
+func New(opts ...Opt) *App {
+	platform := platform.New(platform.WithApp(Name))
 	logger := logger.New()
 	defer logger.Sync()
 
 	exec := cmd.NewExecutor(cmd.WithInheritedEnv())
 	stamps := stamp.New()
 
-	return &App{
-		Name:     APP_NAME,
+	a := &App{
+		Name:     Name,
 		Executor: exec,
 		Logger:   logger,
 		Platform: platform,
 		Stamps:   stamps,
 	}
+
+	// (re-)configure
+	for _, o := range opts {
+		o(a)
+	}
+
+	return a
 }

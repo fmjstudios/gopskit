@@ -10,9 +10,11 @@ import (
 	"go.uber.org/zap"
 )
 
-const APP_NAME = "waltr"
+const (
+	Name = "waltr"
+)
 
-type AppOpt func(a *App)
+type Opt func(a *App)
 
 // type App is the implementation for the `waltr` command-line application
 type App struct {
@@ -23,8 +25,8 @@ type App struct {
 }
 
 // New creates a newly initialized instance of the App type
-func New(opts ...AppOpt) *App {
-	platform := platform.New(platform.WithApp(APP_NAME))
+func New(opts ...Opt) *App {
+	platform := platform.New(platform.WithApp(Name))
 	logger := logger.New()
 	defer logger.Sync()
 
@@ -36,9 +38,9 @@ func New(opts ...AppOpt) *App {
 
 	stamps := stamp.New()
 
-	return &App{
+	a := &App{
 		GOpsKitApp: &common.GOpsKitApp{
-			Name:       APP_NAME,
+			Name:       Name,
 			Executor:   exec,
 			KubeClient: kc,
 			Logger:     logger,
@@ -46,4 +48,11 @@ func New(opts ...AppOpt) *App {
 			Stamps:     stamps,
 		},
 	}
+
+	// (re-)configure
+	for _, o := range opts {
+		o(a)
+	}
+
+	return a
 }

@@ -12,6 +12,6 @@ func main() {
 	rCmd := cmd.NewRootCommand()
 
 	if err := rCmd.Execute(); err != nil {
-		log.Fatalf("%s exited with error: %v\n", app.APP_NAME, err)
+		log.Fatalf("%s exited with error: %v\n", app.Name, err)
 	}
 }

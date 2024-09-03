@@ -20,8 +20,8 @@ func NewRootCommand() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   app.APP_NAME + " [FILE]",
-		Short: fmt.Sprintf("%s CLI", app.APP_NAME),
+		Use:   app.Name + " [FILE]",
+		Short: fmt.Sprintf("%s CLI", app.Name),
 		Long:  "Manage authentication for Kubernetes applications using Keycloak",
 		Args: func(cmd *cobra.Command, args []string) error {
 			// ensure 1 argument
@@ -75,7 +75,7 @@ fillr my-values.yaml -t "{{ index .Values \"kubescape-operator\" \"chartValues\"
 
 			// output to file
 			if output != "" {
-				if err := os.WriteFile(output, yaml, 0644); err != nil {
+				if err := os.WriteFile(output, yaml, 0600); err != nil {
 					return err
 				}
 				return nil

@@ -10,8 +10,8 @@ import (
 
 func NewRootCommand(a *app.App) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:              app.APP_NAME,
-		Short:            fmt.Sprintf("%s CLI", app.APP_NAME),
+		Use:              app.Name,
+		Short:            fmt.Sprintf("%s CLI", app.Name),
 		Long:             "Manage authentication for Kubernetes applications using Keycloak",
 		TraverseChildren: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

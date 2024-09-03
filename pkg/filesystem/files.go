@@ -43,7 +43,7 @@ func Write(path string, content []byte) error {
 		}
 	}
 
-	if err := os.WriteFile(abs, content, 0644); err != nil {
+	if err := os.WriteFile(abs, content, 0600); err != nil {
 		return err
 	}
 

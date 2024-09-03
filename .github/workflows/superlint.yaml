@@ -1,6 +1,8 @@
-name: 'Run Super-Linter'
+name: "Run Super-Linter"
 
-on: ['push', 'pull_request']
+on: ["push", "pull_request"]
+
+permissions: read-all
 
 jobs:
   lint:
@@ -28,11 +30,7 @@ jobs:
           VALIDATE_NATURAL_LANGUAGE: false
           VALIDATE_JSCPD: false
           VALIDATE_KUBERNETES_KUBECONFORM: false
-          # cannot handle Helm templates
-          #VALIDATE_YAML: false
-          # random issues
-          #VALIDATE_CHECKOV: false
-          # prettier cannot handle Helm templates
-          # schema.json files do not need to conform to Prettier's standards
-          #VALIDATE_YAML_PRETTIER: false
-          #VALIDATE_JSON_PRETTIER: false
+          # there individual Go files to be linted (all modules)
+          VALIDATE_GO: false
+          # disable for now, as it's a bit too early for strict rules
+          VALIDATE_GO_MODULES: false

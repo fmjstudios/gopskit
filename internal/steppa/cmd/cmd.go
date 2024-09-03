@@ -9,8 +9,8 @@ import (
 
 func NewRootCommand(a *app.App) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:              app.APP_NAME,
-		Short:            fmt.Sprintf("%s CLI", app.APP_NAME),
+		Use:              app.Name,
+		Short:            fmt.Sprintf("%s CLI", app.Name),
 		Long:             "Generate and update Smallstep PKI information",
 		TraverseChildren: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

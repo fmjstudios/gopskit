@@ -3,8 +3,8 @@
 `GOpsKit` (Go Ops Kit) is an open-source [MIT][license]-licensed [Go][go]-based toolkit for working with [Kubernetes]
 [kubernetes] Clusters `v1.26` and above. The project is built using Google's [Bazel][bazel] build system in
 combination with their first-party [Gazelle][gazelle] `BUILD` file generator. The toolkit offers various
-functionalities like setting up HashiCorp's [Vault][vault] with [`vaultr`][vaultr] or registering various
-applications for SSO authentication with [Keycloak][keycloak] using [`opsctl`][opsctl].
+functionalities like setting up HashiCorp's [Vault][vault] with [`waltr`][waltr] or registering various
+applications for SSO authentication with [Keycloak][keycloak] using [`ssolo`][ssolo].
 
 ## ✨ TL;DR
 
@@ -53,6 +53,7 @@ This project is owned and maintained by [FMJ Studios][org] refer to the [`AUTHOR
 [owners]: .github/CODEOWNERS
 
 <!-- General links -->
+
 [org]: https://github.com/fmjstudios
 [kubernetes]: https://kubernetes.io
 [vault]: https://vaultproject.io

@@ -1,3 +1,3 @@
 package app
 
-const APP_NAME = "fillr"
+const Name = "fillr"

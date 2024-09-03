@@ -2,7 +2,7 @@
 
 ## ➕ Additions
 
-- [X] Add [`.bazelrc`](https://bazel.build/run/bazelrc)
+- [x] Add [`.bazelrc`](https://bazel.build/run/bazelrc)
 
 ## ✏️ Planned Changes
 
@@ -60,7 +60,7 @@
   panic(err)
  }
 
- if err := os.WriteFile("/tmp/gopskit-test/fillr-out-values.yaml", content, 0644); err != nil {
+ if err := os.WriteFile("/tmp/gopskit-test/fillr-out-values.yaml", content, 0600); err != nil {
   panic(err)
  }
 
