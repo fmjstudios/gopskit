@@ -8,64 +8,53 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type GetOptions struct {
-	Name       string
-	Namespace  string
-	GetOptions *metav1.GetOptions
-}
+// type GetOptions struct {
+// 	Name       string
+// 	Namespace  string
+// 	GetOptions *metav1.GetOptions
+// }
 
-func (c *KubeClient) GetPod(opts *GetOptions) (*corev1.Pod, error) {
-	namespace := c.namespace
-	if opts.Namespace != "" {
-		namespace = opts.Namespace
-	}
-
-	pod, err := c.client.CoreV1().Pods(namespace).Get(context.Background(), opts.Name, *opts.GetOptions)
+func (c *KubeClient) Namespaces(opts metav1.ListOptions) ([]corev1.Namespace, error) {
+	ns, err := c.Client.CoreV1().Namespaces().List(context.Background(), opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return pod, nil
+	return ns.Items, nil
 }
 
-func (c *KubeClient) GetService(opts *GetOptions) (*corev1.Service, error) {
-	namespace := c.namespace
-	if opts.Namespace != "" {
-		namespace = opts.Namespace
-	}
-
-	svc, err := c.client.CoreV1().Services(namespace).Get(context.Background(), opts.Name, *opts.GetOptions)
+func (c *KubeClient) Pods(namespace string, opts metav1.ListOptions) ([]corev1.Pod, error) {
+	podL, err := c.Client.CoreV1().Pods(namespace).List(context.Background(), opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return svc, nil
+	return podL.Items, nil
 }
 
-func (c *KubeClient) GetSecret(opts *GetOptions) (*corev1.Secret, error) {
-	namespace := c.namespace
-	if opts.Namespace != "" {
-		namespace = opts.Namespace
-	}
-
-	sec, err := c.client.CoreV1().Secrets(namespace).Get(context.Background(), opts.Name, *opts.GetOptions)
+func (c *KubeClient) Services(namespace string, opts metav1.ListOptions) ([]corev1.Service, error) {
+	svcL, err := c.Client.CoreV1().Services(namespace).List(context.Background(), opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return sec, nil
+	return svcL.Items, nil
 }
 
-func (c *KubeClient) GetIngress(opts *GetOptions) (*networkingv1.Ingress, error) {
-	namespace := c.namespace
-	if opts.Namespace != "" {
-		namespace = opts.Namespace
-	}
-
-	ing, err := c.client.NetworkingV1().Ingresses(namespace).Get(context.Background(), opts.Name, *opts.GetOptions)
+func (c *KubeClient) Secrets(namespace string, opts metav1.ListOptions) ([]corev1.Secret, error) {
+	secL, err := c.Client.CoreV1().Secrets(namespace).List(context.Background(), opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return ing, nil
+	return secL.Items, nil
+}
+
+func (c *KubeClient) Ingresses(namespace string, opts metav1.ListOptions) ([]networkingv1.Ingress, error) {
+	ingL, err := c.Client.NetworkingV1().Ingresses(namespace).List(context.Background(), opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return ingL.Items, nil
 }

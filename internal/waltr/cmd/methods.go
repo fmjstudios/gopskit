@@ -8,8 +8,8 @@ import (
 func NewMethodsCommand(a *app.App) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "methods",
-		Short:            "auth",
-		Aliases:          []string{"auth-methods", "authentication-methods"},
+		Short:            "Manage Vault's authentication methods",
+		Aliases:          []string{"auth", "authentication"},
 		Long:             "Manage Vault's authentication methods",
 		TraverseChildren: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

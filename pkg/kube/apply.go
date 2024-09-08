@@ -21,7 +21,7 @@ func (c *KubeClient) Apply(schema schema.GroupVersionResource, resource *unstruc
 	var result *unstructured.Unstructured
 	var err error
 
-	dc, err := dynamic.NewForConfig(c.config)
+	dc, err := dynamic.NewForConfig(c.Config)
 	if err != nil {
 		panic(err)
 	}

@@ -55,7 +55,7 @@ func (c *KubeClient) PortForward(ctx context.Context, opts PortForwardOptions) e
 		c.namespace = opts.Namespace
 	}
 
-	podC := c.client.CoreV1().Pods(c.namespace)
+	podC := c.Client.CoreV1().Pods(c.namespace)
 
 	pod, err := podC.Get(ctx, opts.PodName, metav1.GetOptions{})
 	if err != nil {
@@ -84,12 +84,12 @@ func (c *KubeClient) PortForward(ctx context.Context, opts PortForwardOptions) e
 		}
 	}()
 
-	req := c.client.RESTClient().Post().
+	req := c.Client.RESTClient().Post().
 		Resource("pods").
 		Namespace(c.namespace).
 		Name(opts.PodName).SubResource("portforward")
 
-	return c.portForwarder.ForwardPorts("POST", c.config, req.URL(), opts)
+	return c.PortForwarder.ForwardPorts("POST", c.Config, req.URL(), opts)
 }
 
 func createDialer(method string, url *url.URL, restConfig *rest.Config) (httpstream.Dialer, error) {

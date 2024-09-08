@@ -1,19 +1,22 @@
-# Go Ops Kit <img src="https://raw.githubusercontent.com/fmjstudios/artwork/0fbaea26cdaae204c9e6a03e5ec61d42d7b60cf7/projects/gopskit/icon/color/gopskit-icon-color.png" alt="GOpsKit Logo" align="right" width="225"/>
+# Go Operations Toolkit <img src="https://github.com/fmjstudios/artwork/blob/5f7696fd09584e4d34d2ab0de3eb52b86037d924/projects/gopskit/icon/color/gopskit-icon-color.png?raw=true" alt="GOpsKit Logo" align="right" width="225"/>
 
-`GOpsKit` (Go Ops Kit) is an open-source [MIT][license]-licensed [Go][go]-based toolkit for working with [Kubernetes]
+`GOpsKit` (**Go** **Op**erations Tool**kit**) is an open-source [MIT][license]-licensed [Go][go]-based toolkit for working with [Kubernetes]
 [kubernetes] Clusters `v1.26` and above. The project is built using Google's [Bazel][bazel] build system in
-combination with their first-party [Gazelle][gazelle] `BUILD` file generator. The toolkit offers various
-functionalities like setting up HashiCorp's [Vault][vault] with [`waltr`][waltr] or registering various
-applications for SSO authentication with [Keycloak][keycloak] using [`ssolo`][ssolo].
+combination with their first-party [Gazelle][gazelle] `BUILD` file generator.
+
+## 📖 Overview
+
+The toolkit offers a plethora of functionalities like setting up HashiCorp's [Vault][vault] with [`waltr`][waltr], registering various
+applications for SSO authentication with [Keycloak][keycloak] using [`ssolo`][ssolo]. Never write [Helmfile][helmfile] `values.yaml` template files to manage applications on your cluster again. Instead generate them using [`fillr`][fillr]. Are you running your own custom private Certificate Authority using [Smallstep's CA][smallstep_certificates]? Then you'd likely want to generate and manage PKI values using [`steppa`][steppa]. The German KBA delivers data in a custom bespoke text-based format, which purely relies on columns to separate data. _That ain't SQL..._ So let's swiftly generate some usable SQL import script using [`amtrac`][amtrac].
 
 ## ✨ TL;DR
 
 ```shell
-# build all projects at once
+# build all projects at once - requires Bazel at .bazelversion
 bazel build //...
 ```
 
-## 📖 Overview
+## 🛠️ Tools
 
 Like most modern [Go][go] projects the various executables are located within the [cmd][cmd] directory. Here's a
 quick-reference list as an overview:
@@ -33,6 +36,11 @@ formats and versioning tips.
 
 This project is owned and maintained by [FMJ Studios][org] refer to the [`AUTHORS`][authors] or [`CODEOWNERS`]
 [owners] for more information. You may also use the linked contact details to reach out directly.
+
+### ©️ Copyright
+
+- _Assets provided by:_ **[IconScout](https://iconscout.com)**
+- _Sources provided by:_ **[FMJ Studios][org]** under the **[MIT License][license]**
 
 <!-- INTERNAL REFERENCES -->
 
@@ -61,3 +69,5 @@ This project is owned and maintained by [FMJ Studios][org] refer to the [`AUTHOR
 [go]: https://go.dev
 [bazel]: https://bazel.build
 [gazelle]: https://github.com/bazelbuild/bazel-gazelle
+[helmfile]: https://github.com/helmfile/helmfile
+[smallstep_certificates]: https://github.com/smallstep/certificates

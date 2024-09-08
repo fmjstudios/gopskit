@@ -46,12 +46,12 @@ func (*DefaultRemoteExecutor) Execute(url *url.URL, restConfig *rest.Config, std
 // Exec executes a command within the container of a specific Pod in the current namespace
 // configured for the client. If another namespace is required the ExecInNamespace helper
 // provides an escape hatch
-func (c *KubeClient) Exec(command string, opts *ExecOptions) (string, string, error) {
+func (c *KubeClient) Exec(command string, opts ExecOptions) (string, string, error) {
 	var err error
 	var stdOut, stdErr bytes.Buffer
 
 	args := strings.Fields(command)
-	req := c.client.CoreV1().
+	req := c.Client.CoreV1().
 		RESTClient().
 		Post().
 		Resource("pods").
@@ -67,7 +67,7 @@ func (c *KubeClient) Exec(command string, opts *ExecOptions) (string, string, er
 			TTY:       false,
 		}, scheme.ParameterCodec)
 
-	if err = c.executor.Execute(req.URL(), c.config, &stdOut, &stdErr); err != nil {
+	if err = c.Executor.Execute(req.URL(), c.Config, &stdOut, &stdErr); err != nil {
 		return "", "", fmt.Errorf("error in Kubernetes exec Stream: %v", err.Error())
 	}
 

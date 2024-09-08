@@ -4,7 +4,7 @@ go_library(
     name = "cmd",
     srcs = [
         "cmd.go",
-        "high-availability.go",
+        "init.go",
         "methods.go",
     ],
     importpath = "github.com/fmjstudios/gopskit/internal/waltr/cmd",
@@ -12,6 +12,8 @@ go_library(
     deps = [
         "//internal/waltr/app",
         "@com_github_spf13_cobra//:cobra",
+        "@io_k8s_cli_runtime//pkg/printers",
+        "@io_k8s_client_go//kubernetes/scheme",
     ],
 )
 

@@ -15,13 +15,13 @@ type CreateOptions struct {
 	CreateOptions *metav1.CreateOptions
 }
 
-func (c *KubeClient) CreatePod(pod *corev1.Pod, opts *CreateOptions) error {
+func (c *KubeClient) CreatePod(pod *corev1.Pod, opts CreateOptions) error {
 	namespace := c.namespace
 	if opts.Namespace != "" {
 		namespace = opts.Namespace
 	}
 
-	_, err := c.client.CoreV1().Pods(namespace).Create(context.Background(), pod, *opts.CreateOptions)
+	_, err := c.Client.CoreV1().Pods(namespace).Create(context.Background(), pod, *opts.CreateOptions)
 	if err != nil {
 		return err
 	}
@@ -29,13 +29,13 @@ func (c *KubeClient) CreatePod(pod *corev1.Pod, opts *CreateOptions) error {
 	return nil
 }
 
-func (c *KubeClient) CreateDeployment(deployment *appsv1.Deployment, opts *CreateOptions) error {
+func (c *KubeClient) CreateDeployment(deployment *appsv1.Deployment, opts CreateOptions) error {
 	namespace := c.namespace
 	if opts.Namespace != "" {
 		namespace = opts.Namespace
 	}
 
-	_, err := c.client.AppsV1().Deployments(namespace).Create(context.Background(), deployment, *opts.CreateOptions)
+	_, err := c.Client.AppsV1().Deployments(namespace).Create(context.Background(), deployment, *opts.CreateOptions)
 	if err != nil {
 		return err
 	}
@@ -43,13 +43,13 @@ func (c *KubeClient) CreateDeployment(deployment *appsv1.Deployment, opts *Creat
 	return nil
 }
 
-func (c *KubeClient) CreateService(service *corev1.Service, opts *CreateOptions) error {
+func (c *KubeClient) CreateService(service *corev1.Service, opts CreateOptions) error {
 	namespace := c.namespace
 	if opts.Namespace != "" {
 		namespace = opts.Namespace
 	}
 
-	_, err := c.client.CoreV1().Services(namespace).Create(context.Background(), service, *opts.CreateOptions)
+	_, err := c.Client.CoreV1().Services(namespace).Create(context.Background(), service, *opts.CreateOptions)
 	if err != nil {
 		return err
 	}
@@ -57,13 +57,13 @@ func (c *KubeClient) CreateService(service *corev1.Service, opts *CreateOptions)
 	return nil
 }
 
-func (c *KubeClient) CreateSecret(secret *corev1.Secret, opts *CreateOptions) error {
+func (c *KubeClient) CreateSecret(secret *corev1.Secret, opts CreateOptions) error {
 	namespace := c.namespace
 	if opts.Namespace != "" {
 		namespace = opts.Namespace
 	}
 
-	_, err := c.client.CoreV1().Secrets(namespace).Create(context.Background(), secret, *opts.CreateOptions)
+	_, err := c.Client.CoreV1().Secrets(namespace).Create(context.Background(), secret, *opts.CreateOptions)
 	if err != nil {
 		return err
 	}
@@ -71,13 +71,13 @@ func (c *KubeClient) CreateSecret(secret *corev1.Secret, opts *CreateOptions) er
 	return nil
 }
 
-func (c *KubeClient) CreateIngress(ingress *networkingv1.Ingress, opts *CreateOptions) error {
+func (c *KubeClient) CreateIngress(ingress *networkingv1.Ingress, opts CreateOptions) error {
 	namespace := c.namespace
 	if opts.Namespace != "" {
 		namespace = opts.Namespace
 	}
 
-	_, err := c.client.NetworkingV1().Ingresses(namespace).Create(context.Background(), ingress, *opts.CreateOptions)
+	_, err := c.Client.NetworkingV1().Ingresses(namespace).Create(context.Background(), ingress, *opts.CreateOptions)
 	if err != nil {
 		return err
 	}

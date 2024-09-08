@@ -6,6 +6,8 @@ import (
 
 	"github.com/fmjstudios/gopskit/pkg/filesystem"
 	"github.com/fmjstudios/gopskit/pkg/platform"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/cli-runtime/pkg/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -13,6 +15,7 @@ import (
 
 const (
 	DefaultNamespace = "default"
+	DefualtLocalPort = "7150"
 )
 
 var (
@@ -23,23 +26,29 @@ var (
 )
 
 type KubeClient struct {
-	// configPath is the configuration file path for which the current client(-set) was created
-	configPath string
+	// ConfigPath is the configuration file path for which the current client(-set) was created
+	ConfigPath string
 
-	// executor is the connection between local and remote IO streams
-	executor RemoteExecutor
+	// Executor is the connection between local and remote IO streams
+	Executor RemoteExecutor
 
-	// portForwarder is the implementation for the port-forward functionality
-	portForwarder PortForwarder
+	// PortForwarder is the implementation for the port-forward functionality
+	PortForwarder PortForwarder
 
-	// namespace is the Kubernetes namespace the client is configured to access
+	// Namespace is the Kubernetes namespace the client is configured to access
 	namespace string
 
-	// restConfig is the rest.Config for which the client was built
-	config *rest.Config
+	// Config is the rest.Config for which the client was built
+	Config *rest.Config
 
-	// clientSet is the embedded Kubernetes ClientSet
-	client *kubernetes.Clientset
+	// Client is the embedded Kubernetes ClientSet
+	Client *kubernetes.Clientset
+
+	// Builder is Kubernetes REST Request Builder from the `cli-runtime` package
+	Builder *resource.Builder
+
+	// flags are the Kubernetes-specific flags which will be injected into the CLI
+	Flags *genericclioptions.ConfigFlags
 }
 
 // Opt represents a configuration option for the KubeClient
@@ -50,17 +59,19 @@ func NewClient(opts ...Opt) (*KubeClient, error) {
 	var err error
 
 	kc := &KubeClient{
-		executor:      &DefaultRemoteExecutor{},
-		portForwarder: &DefaultPortForwarder{},
+		Executor:      &DefaultRemoteExecutor{},
+		PortForwarder: &DefaultPortForwarder{},
 	}
 
 	for _, opt := range opts {
 		opt(kc)
 	}
 
+	kc.Flags = genericclioptions.NewConfigFlags(true)
+
 	// if WithConfigPath wasn't in the opts
-	if kc.configPath == "" {
-		kc.configPath, err = findKubeConfig()
+	if kc.ConfigPath == "" {
+		kc.ConfigPath, err = findKubeConfig()
 		if err != nil {
 			return nil, err
 		}
@@ -70,16 +81,17 @@ func NewClient(opts ...Opt) (*KubeClient, error) {
 		kc.namespace = DefaultNamespace
 	}
 
-	conf, err := clientcmd.BuildConfigFromFlags("", kc.configPath)
+	kc.Config, err = clientcmd.BuildConfigFromFlags("", kc.ConfigPath)
 	if err != nil {
 		return nil, err
 	}
 
-	kc.client, err = kubernetes.NewForConfig(conf)
+	kc.Client, err = kubernetes.NewForConfig(kc.Config)
 	if err != nil {
 		return nil, err
 	}
 
+	kc.Builder = resource.NewBuilder(kc.Flags)
 	return kc, nil
 }
 
@@ -87,7 +99,7 @@ func NewClient(opts ...Opt) (*KubeClient, error) {
 // This avoids the usual searches done within findKubeConfig
 func WithConfigPath(path string) func(c *KubeClient) {
 	return func(c *KubeClient) {
-		c.configPath = path
+		c.ConfigPath = path
 	}
 }
 

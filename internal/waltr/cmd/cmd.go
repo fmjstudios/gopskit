@@ -20,6 +20,6 @@ func NewRootCommand(a *app.App) *cobra.Command {
 
 	cmd.AddCommand(NewHACommand(a))
 	cmd.AddCommand(NewMethodsCommand(a))
-
+	a.KubeClient.Flags.AddFlags(cmd.PersistentFlags())
 	return cmd
 }
