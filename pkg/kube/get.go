@@ -8,12 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// type GetOptions struct {
-// 	Name       string
-// 	Namespace  string
-// 	GetOptions *metav1.GetOptions
-// }
-
 func (c *KubeClient) Namespaces(opts metav1.ListOptions) ([]corev1.Namespace, error) {
 	ns, err := c.Client.CoreV1().Namespaces().List(context.Background(), opts)
 	if err != nil {

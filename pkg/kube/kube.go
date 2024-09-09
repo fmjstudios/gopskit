@@ -7,7 +7,6 @@ import (
 	"github.com/fmjstudios/gopskit/pkg/filesystem"
 	"github.com/fmjstudios/gopskit/pkg/platform"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/cli-runtime/pkg/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -43,9 +42,6 @@ type KubeClient struct {
 
 	// Client is the embedded Kubernetes ClientSet
 	Client *kubernetes.Clientset
-
-	// Builder is Kubernetes REST Request Builder from the `cli-runtime` package
-	Builder *resource.Builder
 
 	// flags are the Kubernetes-specific flags which will be injected into the CLI
 	Flags *genericclioptions.ConfigFlags
@@ -91,7 +87,6 @@ func NewClient(opts ...Opt) (*KubeClient, error) {
 		return nil, err
 	}
 
-	kc.Builder = resource.NewBuilder(kc.Flags)
 	return kc, nil
 }
 
