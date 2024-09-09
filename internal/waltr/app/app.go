@@ -15,7 +15,9 @@ import (
 )
 
 const (
-	Name = "waltr"
+	Name             = "waltr"
+	DefaultNamespace = "vault"
+	DefaultLabel     = "app.kubernetes.io/name=vault"
 )
 
 type Opt func(a *App)

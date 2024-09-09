@@ -11,9 +11,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/waltr/app",
+        "//pkg/util",
         "@com_github_spf13_cobra//:cobra",
-        "@io_k8s_cli_runtime//pkg/printers",
-        "@io_k8s_client_go//kubernetes/scheme",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
     ],
 )
 

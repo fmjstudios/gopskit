@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/fmjstudios/gopskit/internal/waltr/app"
 	"github.com/spf13/cobra"
-	"k8s.io/cli-runtime/pkg/printers"
-	"k8s.io/client-go/kubernetes/scheme"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func NewHACommand(a *app.App) *cobra.Command {
@@ -24,27 +22,17 @@ func NewHACommand(a *app.App) *cobra.Command {
 		Long:             "Initialize Vault runs in High Availability mode",
 		TraverseChildren: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-
-			data, err := a.KubeClient.Builder.
-				WithScheme(scheme.Scheme, scheme.Scheme.PrioritizedVersionsAllGroups()...).
-				AllNamespaces(true).
-				DefaultNamespace().
-				ResourceTypeOrNameArgs(true, "pod").
-				Do().
-				Object()
+			pods, err := a.KubeClient.Pods("", metav1.ListOptions{
+				LabelSelector: app.DefaultLabel,
+			})
 
 			if err != nil {
 				panic(err)
 			}
 
-			var buf bytes.Buffer
-			printer := printers.NewTypeSetter(scheme.Scheme).ToPrinter(&printers.YAMLPrinter{})
-			if err := printer.PrintObj(data, &buf); err != nil {
-				panic(err)
+			for _, p := range pods {
+				fmt.Println("Found Pod:", p.Name, "- in namespace:", p.Namespace)
 			}
-
-			fmt.Println(buf.String())
-
 			// ns, err := a.KubeClient.Namespaces(metav1.ListOptions{})
 			// if err != nil {
 			// 	fmt.Printf("could not retrieve Kubernetes namespaces: %v\n", err)

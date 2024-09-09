@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fmjstudios/gopskit/internal/waltr/app"
+	"github.com/fmjstudios/gopskit/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +21,7 @@ func NewRootCommand(a *app.App) *cobra.Command {
 
 	cmd.AddCommand(NewHACommand(a))
 	cmd.AddCommand(NewMethodsCommand(a))
+	a.KubeClient.Flags.Namespace = util.StrPtr(app.DefaultNamespace)
 	a.KubeClient.Flags.AddFlags(cmd.PersistentFlags())
 	return cmd
 }
