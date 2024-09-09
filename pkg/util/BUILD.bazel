@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "crypto.go",
         "merge.go",
+        "primitives.go",
     ],
     importpath = "github.com/fmjstudios/gopskit/pkg/util",
     visibility = ["//visibility:public"],
