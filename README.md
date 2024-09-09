@@ -7,7 +7,11 @@ combination with their first-party [Gazelle][gazelle] `BUILD` file generator.
 ## 📖 Overview
 
 The toolkit offers a plethora of functionalities like setting up HashiCorp's [Vault][vault] with [`waltr`][waltr], registering various
-applications for SSO authentication with [Keycloak][keycloak] using [`ssolo`][ssolo]. Never write [Helmfile][helmfile] `values.yaml` template files to manage applications on your cluster again. Instead generate them using [`fillr`][fillr]. Are you running your own custom private Certificate Authority using [Smallstep's CA][smallstep_certificates]? Then you'd likely want to generate and manage PKI values using [`steppa`][steppa]. The German KBA delivers data in a custom bespoke text-based format, which purely relies on columns to separate data. _That ain't SQL..._ So let's swiftly generate some usable SQL import script using [`amtrac`][amtrac].
+applications for SSO authentication with [Keycloak][keycloak] using [`ssolo`][ssolo]. Never write [Helmfile][helmfile] `values.yaml`
+template files to manage applications on your cluster again. Instead generate them using [`fillr`][fillr]. Are you running your own custom
+private Certificate Authority using [Smallstep's CA][smallstep_certificates]? Then you'd likely want to generate and manage PKI values
+using [`steppa`][steppa]. The German KBA delivers data in a custom bespoke text-based format, which purely relies on columns to separate
+data. _That ain't SQL..._ So let's swiftly generate some usable SQL import script using [`amtrac`][amtrac].
 
 ## ✨ TL;DR
 
@@ -34,8 +38,8 @@ formats and versioning tips.
 
 ### 📥 Maintainers
 
-This project is owned and maintained by [FMJ Studios][org] refer to the [`AUTHORS`][authors] or [`CODEOWNERS`]
-[owners] for more information. You may also use the linked contact details to reach out directly.
+This project is owned and maintained by [FMJ Studios][org] refer to the [`AUTHORS`][authors] or [`CODEOWNERS`][owners]
+for more information. You may also use the linked contact details to reach out directly.
 
 ### ©️ Copyright
 
