@@ -10,9 +10,9 @@ import (
 
 func NewHACommand(a *app.App) *cobra.Command {
 	var (
-		high_availability bool
-		threshold         int
-		shares            int
+		highAvailability bool
+		threshold        int
+		shares           int
 	)
 
 	cmd := &cobra.Command{
@@ -22,8 +22,10 @@ func NewHACommand(a *app.App) *cobra.Command {
 		Long:             "Initialize Vault runs in High Availability mode",
 		TraverseChildren: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			label, _ := cmd.Flags().GetString("label")
+
 			pods, err := a.KubeClient.Pods("", metav1.ListOptions{
-				LabelSelector: app.DefaultLabel,
+				LabelSelector: label,
 			})
 
 			if err != nil {
@@ -53,7 +55,7 @@ func NewHACommand(a *app.App) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().BoolVar(&high_availability, "high-availability", false, "Ensure Vault is running in HA mode")
+	cmd.PersistentFlags().BoolVar(&highAvailability, "high-availability", false, "Ensure Vault is running in HA mode")
 	cmd.PersistentFlags().IntVar(&threshold, "threshold", 4, "The threshold of recovery keys required to unlock Vault")
 	cmd.PersistentFlags().IntVar(&shares, "shares", 7, "The amount of total recovery key shares Vault emits")
 

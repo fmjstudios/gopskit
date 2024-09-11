@@ -9,6 +9,10 @@ import (
 )
 
 func NewRootCommand(a *app.App) *cobra.Command {
+	var (
+		label string
+	)
+
 	cmd := &cobra.Command{
 		Use:              app.Name,
 		Short:            fmt.Sprintf("%s CLI", app.Name),
@@ -19,9 +23,15 @@ func NewRootCommand(a *app.App) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(NewHACommand(a))
-	cmd.AddCommand(NewMethodsCommand(a))
+	// Kubernetes Flags
 	a.KubeClient.Flags.Namespace = util.StrPtr(app.DefaultNamespace)
 	a.KubeClient.Flags.AddFlags(cmd.PersistentFlags())
+
+	cmd.PersistentFlags().StringVarP(&label, "label", "l", app.DefaultLabel, "The Kubernetes label to filter resources by")
+
+	// subcommands
+	cmd.AddCommand(NewHACommand(a))
+	cmd.AddCommand(NewMethodsCommand(a))
+
 	return cmd
 }
