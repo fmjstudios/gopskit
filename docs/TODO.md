@@ -17,6 +17,8 @@
 - [Fedora - Exeucting remote Kubernetes processes](https://miminar.fedorapeople.org/_preview/openshift-enterprise/registry-redeploy/go_client/executing_remote_processes.html)
 - [Kubernetes Go Client - Port Forward Example](https://github.com/gianarb/kube-port-forward/blob/master/main.go)
 - [Kubernetes Go Client - Generic Forwarder](https://github.com/anthhub/forwarder)
+- [Kubernetes Go Client - Dynamic Client (for CRDs)](https://caiorcferreira.github.io/post/the-kubernetes-dynamic-client/)
+- [Kubernetes Kubebuilder - Building a CRD client](https://geek.jasonhancock.com/2023/07/28/k8s-crd-golang-kubebuilder/)
 
 ### Bazel
 
