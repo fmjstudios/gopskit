@@ -14,7 +14,7 @@ import (
 
 const (
 	DefaultNamespace = "default"
-	DefualtLocalPort = "7150"
+	DefaultLocalPort = "7150"
 )
 
 var (

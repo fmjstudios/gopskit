@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"github.com/fmjstudios/gopskit/internal/waltr/util"
+	"github.com/hashicorp/vault-client-go/schema"
+	"time"
 
 	"github.com/fmjstudios/gopskit/internal/waltr/app"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func NewHACommand(a *app.App) *cobra.Command {
@@ -24,10 +27,7 @@ func NewHACommand(a *app.App) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			label, _ := cmd.Flags().GetString("label")
 
-			pods, err := a.KubeClient.Pods("", metav1.ListOptions{
-				LabelSelector: label,
-			})
-
+			pods, err := util.Pods(a, "", label)
 			if err != nil {
 				panic(err)
 			}
@@ -35,21 +35,36 @@ func NewHACommand(a *app.App) *cobra.Command {
 			for _, p := range pods {
 				fmt.Println("Found Pod:", p.Name, "- in namespace:", p.Namespace)
 			}
-			// ns, err := a.KubeClient.Namespaces(metav1.ListOptions{})
-			// if err != nil {
-			// 	fmt.Printf("could not retrieve Kubernetes namespaces: %v\n", err)
-			// }
 
-			// for _, n := range ns {
-			// 	pods, err := a.KubeClient.Pods(n.Name, metav1.ListOptions{})
-			// 	if err != nil {
-			// 		fmt.Printf("could not retrieve Pods in namespace: %s. error: %v\n", n.Name, err)
-			// 	}
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			go func() {
+				err := a.KubeClient.PortForward(ctx, pods[0])
+				if err != nil {
+					panic(err)
+				}
+			}()
 
-			// 	for _, v := range pods {
-			// 		fmt.Printf("Found pod: %s in namespace %s.\n", v.Name, n.Name)
-			// 	}
-			// }
+			status, err := a.VaultClient.System.Initialize(context.Background(), schema.InitializeRequest{
+				PgpKeys:           nil,
+				RecoveryPgpKeys:   nil,
+				RecoveryShares:    0,
+				RecoveryThreshold: 0,
+				RootTokenPgpKey:   "",
+				SecretShares:      0,
+				SecretThreshold:   0,
+				StoredShares:      0,
+			})
+
+			if err != nil {
+				panic(err)
+			}
+
+			fmt.Println("Vault status:", status.Data)
+			fmt.Println("Done")
+
+			fmt.Println("Sleeping for 30 seconds")
+			time.Sleep(30 * time.Second)
 
 			return nil
 		},

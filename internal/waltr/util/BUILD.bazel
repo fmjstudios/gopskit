@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "util",
+    srcs = ["vault.go"],
+    importpath = "github.com/fmjstudios/gopskit/internal/waltr/util",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/waltr/app",
+        "//pkg/env",
+        "//pkg/filesystem",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":util",
+    visibility = ["//:__subpackages__"],
+)

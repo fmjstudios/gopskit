@@ -10,30 +10,29 @@ import (
 	"os/signal"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
 )
 
-type PortForwardOptions struct {
-	PodName      string
-	Container    string
-	Namespace    string
-	Address      []string
-	Ports        []string
-	ReadyChannel chan struct{}
-	StopChannel  chan struct{}
-}
+//type PortForwardOptions struct {
+//	PodName   string
+//	Container string
+//	Namespace string
+//	Address   []string
+//	Ports     []string
+//}
 
 type PortForwarder interface {
-	ForwardPorts(method string, restConfig *rest.Config, url *url.URL, opts PortForwardOptions) error
+	ForwardPorts(method string, restConfig *rest.Config, url *url.URL, ports []string, stopChan,
+		readyChan chan struct{}) error
 }
 
 type DefaultPortForwarder struct{}
 
-func (*DefaultPortForwarder) ForwardPorts(method string, restConfig *rest.Config, url *url.URL, opts PortForwardOptions) error {
+func (*DefaultPortForwarder) ForwardPorts(method string, restConfig *rest.Config, url *url.URL, ports []string, stopChan,
+	readyChan chan struct{}) error {
 	var err error
 	var stdOut, stdErr bytes.Buffer
 
@@ -42,7 +41,15 @@ func (*DefaultPortForwarder) ForwardPorts(method string, restConfig *rest.Config
 		return err
 	}
 
-	pf, err := portforward.NewOnAddresses(dialer, opts.Address, opts.Ports, opts.StopChannel, opts.StopChannel, &stdOut, &stdErr)
+	pf, err := portforward.NewOnAddresses(
+		dialer,
+		[]string{"localhost"},
+		ports,
+		stopChan,
+		readyChan,
+		&stdOut,
+		&stdErr,
+	)
 	if err != nil {
 		return err
 	}
@@ -50,21 +57,15 @@ func (*DefaultPortForwarder) ForwardPorts(method string, restConfig *rest.Config
 	return pf.ForwardPorts()
 }
 
-func (c *KubeClient) PortForward(ctx context.Context, opts PortForwardOptions) error {
-	if opts.Namespace != "" {
-		c.namespace = opts.Namespace
-	}
-
-	podC := c.Client.CoreV1().Pods(c.namespace)
-
-	pod, err := podC.Get(ctx, opts.PodName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
+// PortForward port-forwards a remote port of a Kubernetes container to the local machine
+func (c *KubeClient) PortForward(ctx context.Context, pod corev1.Pod) error {
 	if pod.Status.Phase != corev1.PodRunning {
 		return fmt.Errorf("uanble to forward ports to a pod that isn't running. Current status: %v", pod.Status.Phase)
 	}
+
+	// create control channels
+	stopChan := make(chan struct{})
+	readyChan := make(chan struct{})
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
@@ -79,17 +80,27 @@ func (c *KubeClient) PortForward(ctx context.Context, opts PortForwardOptions) e
 		case <-returnCtx.Done():
 		}
 
-		if opts.StopChannel != nil {
-			close(opts.StopChannel)
+		if stopChan != nil {
+			close(stopChan)
 		}
 	}()
 
-	req := c.Client.RESTClient().Post().
+	req := c.Client.CoreV1().
+		RESTClient().
+		Post().
 		Resource("pods").
-		Namespace(c.namespace).
-		Name(opts.PodName).SubResource("portforward")
+		Namespace(pod.Namespace).
+		Name(pod.Name).
+		SubResource("portforward")
 
-	return c.PortForwarder.ForwardPorts("POST", c.Config, req.URL(), opts)
+	return c.PortForwarder.ForwardPorts(
+		"POST",
+		c.Config,
+		req.URL(),
+		BuildDefaultPortMap(pod.Spec.Containers[0].Ports[0].ContainerPort),
+		stopChan,
+		readyChan,
+	)
 }
 
 func createDialer(method string, url *url.URL, restConfig *rest.Config) (httpstream.Dialer, error) {
@@ -112,4 +123,9 @@ func createDialer(method string, url *url.URL, restConfig *rest.Config) (httpstr
 	})
 
 	return dialer, nil
+}
+
+// only require remoteport as input
+func BuildDefaultPortMap(remotePort int32) []string {
+	return []string{fmt.Sprintf("%s:%d", DefaultLocalPort, remotePort)}
 }

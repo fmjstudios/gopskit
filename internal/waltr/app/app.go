@@ -59,7 +59,7 @@ func New(opts ...Opt) *App {
 		logger.Fatal("could not create Kubernetes Client", zap.Error(err))
 	}
 
-	va := fmt.Sprintf("http://127.0.0.1:%s", kube.DefualtLocalPort)
+	va := fmt.Sprintf("http://127.0.0.1:%s", kube.DefaultLocalPort)
 	vc, err := vault.New(vault.WithAddress(va), vault.WithRequestTimeout(60*time.Second))
 	if err != nil {
 		logger.Fatal("could not create Vault Client", zap.Error(err))

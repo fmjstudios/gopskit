@@ -80,7 +80,7 @@
 
  fmt.Printf("Found Git directory at: %s\n", git)
 
- SmallStep
+ // SmallStep
  res, err := tools.GenerateStepValues()
  if err != nil {
   log.Fatal(err)
