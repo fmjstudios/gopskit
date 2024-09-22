@@ -1,5 +1,7 @@
 package env
 
+import "strings"
+
 type Environment int
 
 const (
@@ -10,7 +12,7 @@ const (
 
 // String implements the Stringer interface
 func (e Environment) String() string {
-	return [...]string{"dev", "stage", "prod"}[e]
+	return [...]string{"dev", "stage", "prod"}[e-1]
 }
 
 // Index makes the index of the Environment retrievable
@@ -31,4 +33,15 @@ func (e Environment) IsStaging() bool {
 // IsDevelopment is a utility function to quickly determine the environment
 func (e Environment) IsDevelopment() bool {
 	return e == Development
+}
+
+func FromString(s string) Environment {
+	switch strings.ToLower(s) {
+	case "prod":
+		return Production
+	case "stage":
+		return Staging
+	default:
+		return Development
+	}
 }
