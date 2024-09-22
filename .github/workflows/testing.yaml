@@ -89,6 +89,7 @@ jobs:
 
   dispatch:
     runs-on: ubuntu-latest
+    needs: [info, test]
     steps:
       - name: Dispatch a release workflow run
         if: ${{ !failure() }}
@@ -97,7 +98,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
-            await github.repos.createDispatchEvent({
+            await github.rest.repos.createDispatchEvent({
               owner, 
               repo,
               event_type: 'release',
