@@ -87,22 +87,18 @@ jobs:
             dist/*.tar.gz
             dist/*.txt
 
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
       - name: Dispatch a release workflow run
-        if: ${{ success() }}
+        if: ${{ !failure() }}
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const payload = {
-              run_id: "${{ github.run_id }}",
-              sha: context.sha,
-            };
-
-            console.log('Event payload:', JSON.stringify(payload, null, 2));
-
             const { owner, repo } = context.repo;
             await github.repos.createDispatchEvent({
-              owner, repo,
+              owner, 
+              repo,
               event_type: 'release',
-              client_payload: payload,
             });

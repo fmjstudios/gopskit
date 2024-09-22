@@ -22,6 +22,9 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      created: ${{ steps.release.outputs.release_created }}
+      tag: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -40,7 +43,7 @@ jobs:
   artifacts:
     runs-on: ubuntu-latest
     needs: [release]
-    if: ${{ needs.release.outputs.release_created }}
+    if: ${{ needs.release.outputs.created || failure() }}
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -52,4 +55,4 @@ jobs:
 
       - name: Upload artifacts to Release-Please GitHub release
         run: |
-          gh release upload ${{ needs.release.outputs.tag_name }} dist/*.tar.gz dist/*.txt
+          gh release upload ${{ needs.release.outputs.tag }} dist/*.tar.gz dist/*.txt
