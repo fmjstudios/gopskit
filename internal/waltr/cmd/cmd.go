@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"github.com/fmjstudios/gopskit/internal/waltr/app"
-	"github.com/fmjstudios/gopskit/pkg/util"
 	"github.com/spf13/cobra"
 )
 
 func NewRootCommand(a *app.App) *cobra.Command {
 	var (
-		label string
+		environment string
+		label       string
 	)
 
 	cmd := &cobra.Command{
@@ -24,14 +24,18 @@ func NewRootCommand(a *app.App) *cobra.Command {
 	}
 
 	// Kubernetes Flags
-	a.KubeClient.Flags.Namespace = util.StrPtr(app.DefaultNamespace)
-	a.KubeClient.Flags.AddFlags(cmd.PersistentFlags())
+	//a.KubeClient.Flags.Namespace = util.StrPtr(app.DefaultNamespace)
+	//a.KubeClient.Flags.AddFlags(cmd.PersistentFlags())
 
+	cmd.PersistentFlags().StringVarP(&environment, "environment", "e", "dev", "The execution environment to use (dev, stage, prod)")
 	cmd.PersistentFlags().StringVarP(&label, "label", "l", app.DefaultLabel, "The Kubernetes label to filter resources by")
 
 	// subcommands
 	cmd.AddCommand(NewHACommand(a))
 	cmd.AddCommand(NewMethodsCommand(a))
+	cmd.AddCommand(NewConfigureCommand(a))
+	cmd.AddCommand(NewTransitCommand(a))
+	cmd.AddCommand(NewPrepareCommand(a))
 
 	return cmd
 }
