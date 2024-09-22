@@ -36,113 +36,113 @@ LABELS=()
 #   'create_directories' function
 # ----------------------
 function create_directories() {
-    if [[ ! -d "$BUILD_DIR" ]]; then
-      log::yellow "Creating build directory: $BUILD_DIR"
-      mkdir -p "$BUILD_DIR"
-    else
-      log::red "Removing old build directory: $BUILD_DIR"
-      rm -rf "$BUILD_DIR"
-    fi
+  if [[ ! -d "$BUILD_DIR" ]]; then
+    log::yellow "Creating build directory: $BUILD_DIR"
+    mkdir -p "$BUILD_DIR"
+  else
+    log::red "Removing old build directory: $BUILD_DIR"
+    rm -rf "$BUILD_DIR"
+  fi
 
-    # intentional
-    if [[ ! -d "$BUILD_TMP_DIR" ]]; then
-          log::yellow "Creating temporary directory within build directory: $BUILD_TMP_DIR"
-          mkdir -p "$BUILD_TMP_DIR"
-    fi
+  # intentional
+  if [[ ! -d "$BUILD_TMP_DIR" ]]; then
+    log::yellow "Creating temporary directory within build directory: $BUILD_TMP_DIR"
+    mkdir -p "$BUILD_TMP_DIR"
+  fi
 
-    log::green "Created build directories!"
-    return 0
+  log::green "Created build directories!"
+  return 0
 }
 
 # ----------------------
 #   'build_executables' function
 # ----------------------
 function build_executables() {
-    bazel --output_user_root="$BAZEL_CACHE_PATH" build //... 2>/dev/null
-    rc=$?
-    if [[ $rc -ne 0 ]]; then
-      log::red "Bazel build failed. Could not build executables!"
-      return 1
-    fi
+  bazel --output_user_root="$BAZEL_CACHE_PATH" build //... 2>/dev/null
+  rc=$?
+  if [[ $rc -ne 0 ]]; then
+    log::red "Bazel build failed. Could not build executables!"
+    return 1
+  fi
 
-    log::green "Built 'gopskit' executables!"
-    return 0
+  log::green "Built 'gopskit' executables!"
+  return 0
 }
 
 # ----------------------
 #   'build_tarballs' function
 # ----------------------
 function build_tarballs() {
-    for lbl in "${LABELS[@]}"; do
-      pkg=$(echo "$lbl" | cut -d':' -f 2)
-      log::yellow "Copying $pkg binary to $BUILD_TMP_DIR"
+  for lbl in "${LABELS[@]}"; do
+    pkg=$(echo "$lbl" | cut -d':' -f 2)
+    log::yellow "Copying $pkg binary to $BUILD_TMP_DIR"
 
-      output=$(bazel --output_user_root="$BAZEL_CACHE_PATH" cquery --output=files "$lbl" 2>/dev/null)
-      destination=$BUILD_TMP_DIR
-      cp "$output" "$destination"
-    done
+    output=$(bazel --output_user_root="$BAZEL_CACHE_PATH" cquery --output=files "$lbl" 2>/dev/null)
+    destination=$BUILD_TMP_DIR
+    cp "$output" "$destination"
+  done
 
-    log::yellow "Copying package LICENSE to $BUILD_TMP_DIR"
-    cp "$license" "$BUILD_TMP_DIR"
+  log::yellow "Copying package LICENSE to $BUILD_TMP_DIR"
+  cp "$license" "$BUILD_TMP_DIR"
 
-    for pkg in "${PKGS[@]}"; do
-      log::yellow "Building tarball for $pkg"
-      output=$(printf "%s/%s_%s.tar.gz" "$BUILD_DIR" "$pkg" "$PLATFORM")
+  for pkg in "${PKGS[@]}"; do
+    log::yellow "Building tarball for $pkg"
+    output=$(printf "%s/%s_%s.tar.gz" "$BUILD_DIR" "$pkg" "$PLATFORM")
 
-      tar czfvP "$output" -C "$BUILD_TMP_DIR" "$pkg" LICENSE >/dev/null
-      rc=$?
-      if [[ $rc -ne 0 ]]; then
-        log::red "Could not build tarball for package: $pkg"
-        return "$rc"
-      fi
-    done
-
-    log::yellow "Building 'gopskit' tarball"
-    tarb=$(printf "%s/gopskit_%s.tar.gz" "$BUILD_DIR" "$PLATFORM")
-    tar czfvP "$tarb" -C "$BUILD_TMP_DIR" "${PKGS[@]}" "LICENSE" >/dev/null
+    tar czfvP "$output" -C "$BUILD_TMP_DIR" "$pkg" LICENSE >/dev/null
     rc=$?
     if [[ $rc -ne 0 ]]; then
-      log::red "Could not build 'gopskit' tarball"
+      log::red "Could not build tarball for package: $pkg"
       return "$rc"
     fi
+  done
 
-    log::green "Built 'gopskit' executables!"
-    return 0
+  log::yellow "Building 'gopskit' tarball"
+  tarb=$(printf "%s/gopskit_%s.tar.gz" "$BUILD_DIR" "$PLATFORM")
+  tar czfvP "$tarb" -C "$BUILD_TMP_DIR" "${PKGS[@]}" "LICENSE" >/dev/null
+  rc=$?
+  if [[ $rc -ne 0 ]]; then
+    log::red "Could not build 'gopskit' tarball"
+    return "$rc"
+  fi
+
+  log::green "Built 'gopskit' executables!"
+  return 0
 }
 
 # ----------------------
 #   'calculate_checksums' function
 # ----------------------
 function calculate_checksums() {
-    log::yellow "Changing working directory to $BUILD_DIR"
-    old_pwd=$(pwd)
-    cd "$BUILD_DIR"
+  log::yellow "Changing working directory to $BUILD_DIR"
+  old_pwd=$(pwd)
+  cd "$BUILD_DIR"
 
-    for pkg in "${PKGS[@]}"; do
-      log::yellow "Calculating checksums for $pkg"
-      output=$(printf "%s_%s.tar.gz" "$pkg" "$PLATFORM")
-      sha256sum "$output" >> "$BUILD_DIR/checksums.txt"
-      rc=$?
-      if [[ $rc -ne 0 ]]; then
-        log::red "Could not calculate SHA256 checksums for package: $pkg"
-        return "$rc"
-      fi
-    done
-
-    log::yellow "Calculating checksums for 'gopskit'"
-    tarba=$(printf "gopskit_%s.tar.gz" "$PLATFORM")
-    sha256sum "$tarba" >> "$BUILD_DIR/checksums.txt"
+  for pkg in "${PKGS[@]}"; do
+    log::yellow "Calculating checksums for $pkg"
+    output=$(printf "%s_%s.tar.gz" "$pkg" "$PLATFORM")
+    sha256sum "$output" >>"$BUILD_DIR/checksums.txt"
     rc=$?
     if [[ $rc -ne 0 ]]; then
-      log::red "Could not calculate SHA256 checksums for 'gopskit' tarball"
+      log::red "Could not calculate SHA256 checksums for package: $pkg"
       return "$rc"
     fi
+  done
 
-    # switch back
-    cd "$old_pwd"
+  log::yellow "Calculating checksums for 'gopskit'"
+  tarba=$(printf "gopskit_%s.tar.gz" "$PLATFORM")
+  sha256sum "$tarba" >>"$BUILD_DIR/checksums.txt"
+  rc=$?
+  if [[ $rc -ne 0 ]]; then
+    log::red "Could not calculate SHA256 checksums for 'gopskit' tarball"
+    return "$rc"
+  fi
 
-    log::green "Calculated 'gopskit' SHA256 checksums!"
-    return 0
+  # switch back
+  cd "$old_pwd"
+
+  log::green "Calculated 'gopskit' SHA256 checksums!"
+  return 0
 }
 
 # --------------------------------
@@ -151,8 +151,8 @@ function calculate_checksums() {
 function main() {
   # initialize constants
   raw=$(bazel --output_user_root="$BAZEL_CACHE_PATH" query 'kind("go_binary", //...)' 2>/dev/null)
-  while IFS="$(printf '\n')" read -r line ; do LABELS+=("$line"); done <<< "$raw"
-  while IFS="$(printf '\n')" read -r line ; do PKGS+=("$(echo "$line" | cut -d':' -f 2)"); done <<< "$raw"
+  while IFS="$(printf '\n')" read -r line; do LABELS+=("$line"); done <<<"$raw"
+  while IFS="$(printf '\n')" read -r line; do PKGS+=("$(echo "$line" | cut -d':' -f 2)"); done <<<"$raw"
   unset IFS
 
   # CI config
