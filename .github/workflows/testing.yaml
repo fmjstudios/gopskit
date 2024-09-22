@@ -1,20 +1,108 @@
 name: "Testing"
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - main
+      - "**"
   pull_request:
     branches:
-      - main
+      - "**"
 
 permissions: read-all
 
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: "${{ github.workflow }}@${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+
 jobs:
-  test:
-    name: Test
-    timeout-minutes: 60
+  info:
+    name: Gather information
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Get Go Version
+        run: |
+          VERSION=$(bash scripts/status.sh | grep GO_VERSION | cut -d' ' -f 2)
+          echo "go_version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Get Bazel Version
+        run: |
+          VERSION=$(cat .bazelversion)
+          echo "bazel_version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    needs: [info]
+    env:
+      CACHE_PATH: ${{ matrix.os == 'macos-latest' && '/private/var/tmp/_bazel_runner/' || '~/.cache/bazel' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.8.5
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+
+      - name: Cache Bazel
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CACHE_PATH }}
+          key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.bazelrc', 'WORKSPACE', 'MODULE.bazel') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-
+
+      - name: Build Bazel artifacts
+        run: |
+          bazel --output_user_root=${{ env.CACHE_PATH }} build //...
+
+      - name: Test Bazel artifacts
+        run: |
+          bazel --output_user_root=${{ env.CACHE_PATH }} test //...
+
+      # Fail here
+      - name: Generate Release artifacts
+        if: ${{ success() }}
+        run: |
+          bash scripts/release.sh
+
+      - name: Upload Release artifacts
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts
+          path: |
+            dist/*.tar.gz
+            dist/*.txt
+
+      - name: Dispatch a release workflow run
+        if: ${{ success() }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const payload = {
+              run_id: "${{ github.run_id }}",
+              sha: context.sha,
+            };
+
+            console.log('Event payload:', JSON.stringify(payload, null, 2));
+
+            const { owner, repo } = context.repo;
+            await github.repos.createDispatchEvent({
+              owner, repo,
+              event_type: 'release',
+              client_payload: payload,
+            });
