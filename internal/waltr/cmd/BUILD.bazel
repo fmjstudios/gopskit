@@ -4,16 +4,23 @@ go_library(
     name = "cmd",
     srcs = [
         "cmd.go",
+        "configure.go",
         "init.go",
         "methods.go",
+        "prepare.go",
+        "prepare_keycloak.go",
+        "transit.go",
     ],
     importpath = "github.com/fmjstudios/gopskit/internal/waltr/cmd",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/waltr/app",
         "//internal/waltr/util",
-        "//pkg/util",
+        "//pkg/env",
+        "@com_github_hashicorp_vault_client_go//:vault-client-go",
+        "@com_github_hashicorp_vault_client_go//schema",
         "@com_github_spf13_cobra//:cobra",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
     ],
 )
 
