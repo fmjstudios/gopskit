@@ -11,7 +11,6 @@ import (
 	"github.com/fmjstudios/gopskit/pkg/platform"
 	"github.com/fmjstudios/gopskit/pkg/stamp"
 	"github.com/hashicorp/vault-client-go"
-	"go.uber.org/zap"
 )
 
 const (
@@ -43,26 +42,26 @@ type App struct {
 func New(opts ...Opt) *App {
 	var err error
 
-	platform := platform.New(platform.WithApp(Name))
-	logger := logger.New()
+	platf := platform.New(platform.WithApp(Name))
+	log := logger.New()
 	defer func() {
-		err = logger.Sync()
+		err = log.Sync()
 	}()
 
 	if err != nil {
-		logger.Fatal("could not Sync logger", zap.Error(err))
+		log.Fatal("could not Sync logger", err)
 	}
 
 	exec := cmd.NewExecutor(cmd.WithInheritedEnv())
 	kc, err := kube.NewClient()
 	if err != nil {
-		logger.Fatal("could not create Kubernetes Client", zap.Error(err))
+		log.Fatal("could not create Kubernetes Client", err)
 	}
 
 	va := fmt.Sprintf("http://127.0.0.1:%s", kube.DefaultLocalPort)
 	vc, err := vault.New(vault.WithAddress(va), vault.WithRequestTimeout(60*time.Second))
 	if err != nil {
-		logger.Fatal("could not create Vault Client", zap.Error(err))
+		log.Fatal("could not create Vault Client", err)
 	}
 
 	stamps := stamp.New()
@@ -72,8 +71,8 @@ func New(opts ...Opt) *App {
 			Name:       Name,
 			Executor:   exec,
 			KubeClient: kc,
-			Logger:     logger,
-			Platform:   platform,
+			Logger:     log,
+			Platform:   platf,
 			Stamps:     stamps,
 		},
 		VaultClient: vc,

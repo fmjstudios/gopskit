@@ -33,7 +33,7 @@ type Option func(config *zap.Config)
 
 // Logger is a type alias to Uber's zap logger, saving us from importing zap everywhere
 type Logger struct {
-	*zap.Logger
+	*zap.SugaredLogger
 }
 
 // New returns a newly built Logger including all or no Options for configuration
@@ -44,7 +44,7 @@ func New(opts ...Option) *Logger {
 	}
 
 	return &Logger{
-		zap.Must(cfg.Build()),
+		zap.Must(cfg.Build()).Sugar(),
 	}
 }
 

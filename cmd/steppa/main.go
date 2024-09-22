@@ -10,6 +10,6 @@ func main() {
 	rCmd := cmd.NewRootCommand(a)
 
 	if err := rCmd.Execute(); err != nil {
-		a.Logger.Sugar().Fatalf("%s exited with error: %v\n", a.Name, err)
+		a.Logger.Fatalf("%s exited with error: %v\n", a.Name, err)
 	}
 }
