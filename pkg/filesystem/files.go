@@ -1,7 +1,6 @@
 package filesystem
 
 import (
-	"bytes"
 	"os"
 	"path/filepath"
 )
@@ -52,22 +51,17 @@ func Write(path string, content []byte) error {
 }
 
 func Read(path string) ([]byte, error) {
-	var buf bytes.Buffer
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err
 	}
 
-	f, err := os.Open(abs)
+	f, err := os.ReadFile(abs)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-	if _, err := f.Read(buf.Bytes()); err != nil {
-		return nil, err
-	}
 
-	return buf.Bytes(), nil
+	return f, nil
 }
 
 func WriteFile(file *os.File, content []byte) error {
