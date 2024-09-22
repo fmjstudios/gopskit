@@ -8,18 +8,18 @@ import (
 	"net/url"
 	"strings"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 )
 
-type ExecOptions struct {
-	PodName   string
-	Container string
-	Namespace string
-}
+//type ExecOptions struct {
+//	PodName   string
+//	Container string
+//	Namespace string
+//}
 
 // RemoteExecutor defines the interface accepted by the Exec command - provided for test stubbing
 type RemoteExecutor interface {
@@ -46,7 +46,7 @@ func (*DefaultRemoteExecutor) Execute(url *url.URL, restConfig *rest.Config, std
 // Exec executes a command within the container of a specific Pod in the current namespace
 // configured for the client. If another namespace is required the ExecInNamespace helper
 // provides an escape hatch
-func (c *KubeClient) Exec(command string, opts ExecOptions) (string, string, error) {
+func (c *KubeClient) Exec(command string, pod corev1.Pod) (string, string, error) {
 	var err error
 	var stdOut, stdErr bytes.Buffer
 
@@ -55,11 +55,11 @@ func (c *KubeClient) Exec(command string, opts ExecOptions) (string, string, err
 		RESTClient().
 		Post().
 		Resource("pods").
-		Name(opts.PodName).
-		Namespace(opts.Namespace).
+		Name(pod.Name).
+		Namespace(pod.Namespace).
 		SubResource("exec").
-		VersionedParams(&v1.PodExecOptions{
-			Container: opts.Container,
+		VersionedParams(&corev1.PodExecOptions{
+			Container: pod.Spec.Containers[0].Name,
 			Command:   args,
 			Stdin:     false,
 			Stdout:    true,
