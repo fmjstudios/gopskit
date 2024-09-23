@@ -102,9 +102,9 @@ jobs:
               run_id: "${{ github.run_id }}",
               sha: "${{ github.sha }}"
             }
-            
+
             console.log("Sending event payload", JSON.stringify(payload, null, 2));
-            
+
             const { owner, repo } = context.repo;
             await github.rest.repos.createDispatchEvent({
               owner, 
