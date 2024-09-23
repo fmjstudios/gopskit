@@ -47,11 +47,17 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Download Release artifacts
-        uses: actions/download-artifact@v4
+      - name: Download artifact
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v6
         with:
-          name: artifacts
+          name: distributables
+          github_token: '${{ secrets.GITHUB_TOKEN }}'
+          repo: ${{ github.repository }}
+          workflow: testing.yaml
           path: dist
+          search_artifacts: true
+          run_id: ${{github.event.client_payload.run_id }}
 
       - name: Upload artifacts to Release-Please GitHub release
         run: |

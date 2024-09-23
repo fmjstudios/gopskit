@@ -83,7 +83,7 @@ jobs:
         if: ${{ success() }}
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: distributables
           path: |
             dist/*.tar.gz
             dist/*.txt
@@ -98,9 +98,17 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const payload = {
+              run_id: "${{ github.run_id }}",
+              sha: "${{ github.sha }}"
+            }
+            
+            console.log("Sending event payload", JSON.stringify(payload, null, 2));
+            
             const { owner, repo } = context.repo;
             await github.rest.repos.createDispatchEvent({
               owner, 
               repo,
               event_type: 'release',
+              client_payload: payload
             });
