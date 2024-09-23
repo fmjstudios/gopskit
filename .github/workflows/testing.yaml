@@ -9,7 +9,8 @@ on:
     branches:
       - "**"
 
-permissions: read-all
+permissions:
+  contents: write
 
 defaults:
   run:
