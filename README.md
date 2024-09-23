@@ -2,9 +2,10 @@
 
 [![License](https://img.shields.io/github/license/fmjstudios/gopskit?label=License)][license]
 [![go.mod version](https://img.shields.io/github/go-mod/go-version/fmjstudios/gopskit?logo=go)][go]
-[![Language](https://img.shields.io/github/languages/top/fmjstudios/gopskit?logo=go)][go]
+[![Language](https://img.shields.io/github/languages/top/fmjstudios/gopskit?label=Go&logo=go)][go]
 [![Testing](https://github.com/fmjstudios/gopskit/actions/workflows/testing.yaml/badge.svg)][ci_testing_workflow]
-[![GitHub Release](https://img.shields.io/github/v/release/fmjstudios/gopskit)][github_releases]
+[![GitHub Release](https://img.shields.io/github/v/release/fmjstudios/gopskit?label=Release)][github_releases]
+[![GitHub Activity](https://img.shields.io/github/commit-activity/m/fmjstudios/gopskit?label=Commits)][github_commits]
 [![Bazel](https://img.shields.io/badge/Bazel-built-brightgreen?logo=bazel&logoColor=43A047)][bazel]
 [![Renovate](https://img.shields.io/badge/Renovate-enabled-brightgreen?logo=renovate&logoColor=1A1F6C)][renovate]
 [![PreCommit](https://img.shields.io/badge/PreCommit-enabled-brightgreen?logo=precommit&logoColor=FAB040)][precommit]
@@ -87,6 +88,7 @@ for more information. You may also use the linked contact details to reach out d
 [helmfile]: https://github.com/helmfile/helmfile
 [smallstep_certificates]: https://github.com/smallstep/certificates
 [github_releases]: https://github.com/fmjstudios/gopskit/releases
+[github_commits]: https://github.com/fmjstudios/gopskit/commits/main/
 
 <!-- Third-party -->
 
