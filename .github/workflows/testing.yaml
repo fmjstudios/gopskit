@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 defaults:
   run:
@@ -27,7 +28,11 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     env:
+      GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       CACHE_PATH: ${{ matrix.os == 'macos-latest' && '/private/var/tmp/_bazel_runner/' || '~/.cache/bazel' }}
+    outputs:
+      created: "${{ steps.release.outputs.prs_created }}"
+      pr: "${{ steps.output-pr.outputs.number }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,15 +60,30 @@ jobs:
         run: |
           bazel --output_user_root=${{ env.CACHE_PATH }} test //...
 
+      # create a release PR
+      - name: Run Release-Please
+        uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ env.GITHUB_TOKEN }}
+          config-file: "release-please-config.json"
+          manifest-file: ".release-please-manifest.json"
+          release-type: bazel
+
+      - name: Output crated PR number
+        id: output-pr
+        run: |
+          echo "number=${{ fromJSON(steps.release.outputs.pr).number }}" >> "$GITHUB_OUTPUT"
+
       # Fail here if tests didn't succeed
       - name: Generate Release artifacts
-        if: ${{ success() }}
+        if: ${{ success() && steps.release.outputs.prs_created }}
         run: |
           scripts/release.sh executables
           scripts/release.sh tarballs
 
       - name: Upload Release artifacts
-        if: ${{ success() }}
+        if: ${{ success() && steps.release.outputs.prs_created }}
         uses: actions/upload-artifact@v4
         with:
           name: distributables
@@ -73,15 +93,18 @@ jobs:
 
   dispatch:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
     needs: [test]
     steps:
       - name: Dispatch a release workflow run
-        if: ${{ !failure() }}
+        if: ${{ needs.test.outputs.created }}
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: "${{ env.GITHUB_TOKEN }}"
           script: |
             const payload = {
+              pr_number: "${{ needs.test.outputs.pr }}"
               run_id: "${{ github.run_id }}",
               sha: "${{ github.sha }}"
             }

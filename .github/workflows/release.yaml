@@ -26,10 +26,15 @@ jobs:
       created: ${{ steps.release.outputs.release_created }}
       tag: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - name: Auto-merge Release-Please PR
+        run: |
+          gh pr merge ${{ github.event.client_payload.pr_number }} --squash
+
+      - name: Run Release-Please
+        uses: googleapis/release-please-action@v4
         id: release
         with:
-          token: ${{secrets.GITHUB_TOKEN}}
+          token: ${{ secrets.ACCESS_TOKEN }}
           config-file: "release-please-config.json"
           manifest-file: ".release-please-manifest.json"
           release-type: bazel
@@ -39,14 +44,14 @@ jobs:
     needs: [release]
     if: ${{ needs.release.outputs.created && !failure() }}
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
     steps:
       - name: Download Release artifacts
         uses: actions/download-artifact@v4
         with:
           name: distributables
           path: dist
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ env.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           run-id: ${{ github.event.client_payload.run_id }}
 
