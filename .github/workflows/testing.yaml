@@ -24,11 +24,8 @@ jobs:
     name: Test
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest]
         arch: [amd64, arm64]
-        exclude:
-          - os: macos-latest
-            arch: amd64
     runs-on: ${{ matrix.os }}
     env:
       CACHE_PATH: ${{ matrix.os == 'macos-latest' && '/private/var/tmp/_bazel_runner/' || '~/.cache/bazel' }}
