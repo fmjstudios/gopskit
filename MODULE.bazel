@@ -2,7 +2,6 @@
 
 module(
     name = "gopskit",
-    version = "1.0.1",
     repo_name = "com_github_fmjstudios_gopskit",
 )
 

@@ -69,7 +69,7 @@ func WithBits(bits int) func(cfg *DiffieHellmanConfig) {
 	}
 }
 
-func WithEnconding(encoding Encoding) func(cfg *DiffieHellmanConfig) {
+func WithEncoding(encoding Encoding) func(cfg *DiffieHellmanConfig) {
 	return func(cfg *DiffieHellmanConfig) {
 		cfg.Encoding = encoding
 	}

@@ -14,7 +14,7 @@
 
 - [Kubernetes Go Client - Examples](https://github.com/iximiuz/client-go-examples)
 - [Kubernetes Go Client - Exec Example](https://github.com/a4abhishek/Client-Go-Examples)
-- [Fedora - Exeucting remote Kubernetes processes](https://miminar.fedorapeople.org/_preview/openshift-enterprise/registry-redeploy/go_client/executing_remote_processes.html)
+- [Fedora - Executing remote Kubernetes processes](https://miminar.fedorapeople.org/_preview/openshift-enterprise/registry-redeploy/go_client/executing_remote_processes.html)
 - [Kubernetes Go Client - Port Forward Example](https://github.com/gianarb/kube-port-forward/blob/master/main.go)
 - [Kubernetes Go Client - Generic Forwarder](https://github.com/anthhub/forwarder)
 - [Kubernetes Go Client - Dynamic Client (for CRDs)](https://caiorcferreira.github.io/post/the-kubernetes-dynamic-client/)

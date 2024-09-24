@@ -18,7 +18,7 @@ type ExecutorOpt func(e *Executor) error
 type ExecutorExecuteOpt func(e *Executor)
 
 type Executor struct {
-	// InheritEnv determines whether the new process should inhert the environment
+	// InheritEnv determines whether the new process should inherit the environment
 	// of the starting process
 	InheritEnv bool
 
@@ -84,7 +84,7 @@ var (
 )
 
 // WithInheritedEnv configures the Execute function to inherit the current OS environment
-// settings into the command to be exeucted
+// settings into the command to be executed
 func WithInheritedEnv() ExecutorOpt {
 	return func(e *Executor) error {
 		e.InheritEnv = true

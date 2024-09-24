@@ -21,18 +21,33 @@ concurrency:
   group: "${{ github.workflow }}@${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.22
+
+      - name: GolangCI-Lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.61
+
   test:
     name: Test
+    needs: [lint]
     strategy:
       matrix:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     env:
-      GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       CACHE_PATH: ${{ matrix.os == 'macos-latest' && '/private/var/tmp/_bazel_runner/' || '~/.cache/bazel' }}
-    outputs:
-      created: "${{ steps.release.outputs.prs_created }}"
-      pr: "${{ steps.output-pr.outputs.number }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,37 +75,6 @@ jobs:
         run: |
           bazel --output_user_root=${{ env.CACHE_PATH }} test //...
 
-      # create a release PR
-      - name: Run Release-Please
-        uses: googleapis/release-please-action@v4
-        id: release
-        with:
-          token: ${{ env.GITHUB_TOKEN }}
-          config-file: "release-please-config.json"
-          manifest-file: ".release-please-manifest.json"
-          release-type: bazel
-
-      - name: Output crated PR number
-        id: output-pr
-        run: |
-          echo "number=${{ fromJSON(steps.release.outputs.pr).number }}" >> "$GITHUB_OUTPUT"
-
-      # Fail here if tests didn't succeed
-      - name: Generate Release artifacts
-        if: ${{ success() && steps.release.outputs.prs_created }}
-        run: |
-          scripts/release.sh executables
-          scripts/release.sh tarballs
-
-      - name: Upload Release artifacts
-        if: ${{ success() && steps.release.outputs.prs_created }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: distributables
-          path: |
-            dist/*.tar.gz
-            dist/*.txt
-
   dispatch:
     runs-on: ubuntu-latest
     env:
@@ -98,13 +82,12 @@ jobs:
     needs: [test]
     steps:
       - name: Dispatch a release workflow run
-        if: ${{ needs.test.outputs.created }}
+        if: ${{ always() && contains(join(needs.*.result, ','), 'success') }} # ref: https://github.com/actions/runner/issues/1251
         uses: actions/github-script@v7
         with:
           github-token: "${{ env.GITHUB_TOKEN }}"
           script: |
             const payload = {
-              pr_number: "${{ needs.test.outputs.pr }}"
               run_id: "${{ github.run_id }}",
               sha: "${{ github.sha }}"
             }
@@ -113,7 +96,7 @@ jobs:
 
             const { owner, repo } = context.repo;
             await github.rest.repos.createDispatchEvent({
-              owner, 
+              owner,
               repo,
               event_type: 'release',
               client_payload: payload

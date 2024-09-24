@@ -16,7 +16,7 @@ build system in combination with their first-party [Gazelle][gazelle] `BUILD` fi
 
 ## 📖 Overview
 
-The toolkit offers a plethora of functionalities like setting up HashiCorp's [Vault][vault] with [`waltr`][waltr],
+The toolkit offers a plethora of functionalities like setting up HashCorp's [Vault][vault] with [`waltr`][waltr],
 registering various applications for SSO authentication with [Keycloak][keycloak] using [`ssolo`][ssolo]. Never
 write [Helmfile][helmfile] `values.yaml` template files to manage applications on your cluster again. Instead, generate
 them using [`fillr`][fillr]. Are you running your own custom private Certificate Authority using
@@ -37,7 +37,7 @@ Like most modern [Go][go] projects the various executables are located within th
 quick-reference list as an overview:
 
 - [`ssolo`][ssolo]: manage SSO authentication for various apps using Keycloak
-- [`waltr`][waltr]: configure and manage [HashiCorp's Vault][vault]
+- [`waltr`][waltr]: configure and manage [HashCorp's Vault][vault]
 - [`fillr`][fillr]: create Helmfile templates automatically
 - [`steppa`][steppa]: generate and manage SmallStep PKI values
 - [`amtrac`][amtrac]: generate SQL dumps from the German KBA's data files using Docker

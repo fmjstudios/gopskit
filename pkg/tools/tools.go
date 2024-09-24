@@ -1,7 +1,7 @@
 // package tools implements the API to other tools like Helmfile, or Smallstep's 'step' CLI
 // Initially I wanted to compile in the direct sources from their respective Go modules
 //
-// However, Bazel struggles with compilation of the depedencies, mainly due to issues with the
+// However, Bazel struggles with compilation of the dependencies, mainly due to issues with the
 // new 'bzlmod' dependency system
 package tools
 

@@ -33,7 +33,7 @@ func WithVaultOpts(opts ...vault.ClientOption) Opt {
 type App struct {
 	*common.GOpsKitApp
 
-	// VaultClient is the HashiCorp first-party Go Vault HTTP client, which waltr
+	// VaultClient is the HashCorp first-party Go Vault HTTP client, which waltr
 	// uses for nearly all of it's functionality post high-availability setup
 	VaultClient *vault.Client
 }
