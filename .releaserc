@@ -35,12 +35,10 @@
       {
         "assets": [
           {
-            "path": "dist/*.tar.gz",
-            "label": "Distribution tarballs"
+            "path": "dist/*.tar.gz"
           },
           {
-            "path": "dist/CHECKSUMS.txt",
-            "label": "SHA256 Checksums"
+            "path": "dist/CHECKSUMS_SHA256.txt"
           }
         ]
       }
