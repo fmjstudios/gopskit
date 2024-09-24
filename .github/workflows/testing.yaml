@@ -25,7 +25,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        arch: [amd64, arm64]
     runs-on: ${{ matrix.os }}
     env:
       CACHE_PATH: ${{ matrix.os == 'macos-latest' && '/private/var/tmp/_bazel_runner/' || '~/.cache/bazel' }}
@@ -62,11 +61,11 @@ jobs:
 
       - name: Build Bazel artifacts
         run: |
-          bazel --output_user_root=${{ env.CACHE_PATH }} build --platforms=${{ steps.platform.outputs.platform }} //...
+          bazel --output_user_root=${{ env.CACHE_PATH }} build //...
 
       - name: Test Bazel artifacts
         run: |
-          bazel --output_user_root=${{ env.CACHE_PATH }} test --platforms=${{ steps.platform.outputs.platform }} //...
+          bazel --output_user_root=${{ env.CACHE_PATH }} test //...
 
       # Fail here if tests didn't succeed
       - name: Generate Release artifacts
