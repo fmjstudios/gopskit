@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/fmjstudios/gopskit/compare/v1.0.0...v1.0.1) (2024-09-24)
+
+
+### Bug Fixes
+
+* **release:** add multi-arch/platform support ([0753c6b](https://github.com/fmjstudios/gopskit/commit/0753c6b5f211323f1655dd5ad218662f2cfcd67f))
+
 ## 1.0.0 (2024-09-23)
 
 ### Features
