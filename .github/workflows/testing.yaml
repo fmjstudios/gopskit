@@ -47,18 +47,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bazel-
 
-      - name: Determine Bazel platform
-        id: platform
-        run: |
-          os="${{ runner.os }}"
-          platform="linux"
-          case "$os" in
-            Windows) platform="windows" ;;
-            macOS) platform="darwin" ;;
-          esac
-          final=$(printf "@io_bazel_rules_go//go/toolchain:%s_%s" "$platform" ${{ matrix.arch }})
-          echo "platform=$final" >> "$GITHUB_OUTPUT"
-
       - name: Build Bazel artifacts
         run: |
           bazel --output_user_root=${{ env.CACHE_PATH }} build //...
