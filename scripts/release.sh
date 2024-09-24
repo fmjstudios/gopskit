@@ -174,7 +174,7 @@ function release::calculate_checksums() {
 	old_wd=$(pwd)
 	cd "$BUILD_DIR"
 
-	file="CHECKSUMS.txt"
+	file="CHECKSUMS_SHA256.txt"
 	[ -e "$file" ] && rm -f "$file"
 	for dtar in *.txt; do
 		echo "# SHA256" >>"$file"
