@@ -32,10 +32,28 @@ license="$(lib::paths::root)/LICENSE"
 PKGS=()
 LABELS=()
 
+# multi-arch builds
+ARCH=('amd64' 'arm64')
+
+# ----------------------
+#   'help' usage function
+# ----------------------
+function release::usage() {
+  echo
+  echo "Usage: $(basename "${0}") <COMMAND>"
+  echo
+  echo "executables     - Build gopskit executables"
+  echo "tarballs        - Build gopskit distribution tarballs"
+  echo "checksums       - Calculate the SHA256 checksums"
+  echo "cleanup         - Clean-up temporary build directories"
+  echo "help            - Print this usage information"
+  echo
+}
+
 # ----------------------
 #   'create_directories' function
 # ----------------------
-function create_directories() {
+function release::lib::create_directories() {
   if [[ ! -d "$BUILD_DIR" ]]; then
     log::yellow "Creating build directory: $BUILD_DIR"
     mkdir -p "$BUILD_DIR"
@@ -57,89 +75,119 @@ function create_directories() {
 # ----------------------
 #   'build_executables' function
 # ----------------------
-function build_executables() {
-  bazel --output_user_root="$BAZEL_CACHE_PATH" build //... 2>/dev/null
+function release::build_executables() {
+  # create build directories
+  release::lib::create_directories
   rc=$?
   if [[ $rc -ne 0 ]]; then
-    log::red "Bazel build failed. Could not build executables!"
-    return 1
+    log::red "Could not create build directories!"
+    return "$rc"
   fi
 
-  log::green "Built 'gopskit' executables!"
+  for arch in "${ARCH[@]}"; do
+    # build
+    log::yellow "Building 'gopskit' executables for architecture: $arch"
+    platform=$(printf "@io_bazel_rules_go//go/toolchain:%s_%s" "$PLATFORM" "$arch")
+    bazel --output_user_root="$BAZEL_CACHE_PATH" build --stamp --platforms="$platform" //...
+    rc=$?
+    if [[ $rc -ne 0 ]]; then
+      log::red "Bazel build failed. Could not build executables!"
+      return 1
+    fi
+    log::green "Built 'gopskit' executables for architecture: $arch!"
+
+    #copy
+    for lbl in "${LABELS[@]}"; do
+      pkg=$(echo "$lbl" | cut -d':' -f 2)
+      log::yellow "Copying $pkg binary to $BUILD_TMP_DIR"
+
+      output=$(bazel --output_user_root="$BAZEL_CACHE_PATH" cquery \
+        --output=files --platforms="$platform" "$lbl" 2>/dev/null)
+      arch_pkg=$(printf "%s_%s" "$pkg" "$arch")
+      out_pkg=$([ "$PLATFORM" == "windows" ] && echo "$arch_pkg.exe" || echo "$arch_pkg") # append .exe on Windows
+      destination=$(printf "%s/%s" "$BUILD_TMP_DIR" "$out_pkg")
+      cp "$output" "$destination"
+    done
+
+  done
   return 0
 }
 
 # ----------------------
 #   'build_tarballs' function
 # ----------------------
-function build_tarballs() {
-  for lbl in "${LABELS[@]}"; do
-    pkg=$(echo "$lbl" | cut -d':' -f 2)
-    log::yellow "Copying $pkg binary to $BUILD_TMP_DIR"
-
-    output=$(bazel --output_user_root="$BAZEL_CACHE_PATH" cquery --output=files "$lbl" 2>/dev/null)
-    destination=$BUILD_TMP_DIR
-    cp "$output" "$destination"
-  done
-
+function release::build_tarballs() {
   log::yellow "Copying package LICENSE to $BUILD_TMP_DIR"
   cp "$license" "$BUILD_TMP_DIR"
 
-  for pkg in "${PKGS[@]}"; do
-    log::yellow "Building tarball for $pkg"
-    output=$(printf "%s/%s_%s.tar.gz" "$BUILD_DIR" "$pkg" "$PLATFORM")
+  for arch in "${ARCH[@]}"; do
+    for pkg in "${PKGS[@]}"; do
+      log::yellow "Building tarball for $pkg"
+      input=$(printf "%s_%s" "$pkg" "$arch")
+      output=$(printf "%s/%s_%s_%s.tar.gz" "$BUILD_DIR" "$pkg" "$PLATFORM" "$arch")
 
-    tar czfvP "$output" -C "$BUILD_TMP_DIR" "$pkg" LICENSE >/dev/null
+      tar czfvP "$output" -C "$BUILD_TMP_DIR" "$input" LICENSE >/dev/null
+      rc=$?
+      if [[ $rc -ne 0 ]]; then
+        log::red "Could not build tarball for package: $pkg and architecture $arch"
+        return "$rc"
+      fi
+    done
+
+    log::yellow "Building 'gopskit' tarball for architecture: $arch"
+    tarb=$(printf "%s/gopskit_%s_%s.tar.gz" "$BUILD_DIR" "$PLATFORM" "$arch")
+    tar czfvP "$tarb" -C "$BUILD_TMP_DIR" "${PKGS[@]/%/_$arch}" "LICENSE" >/dev/null
     rc=$?
     if [[ $rc -ne 0 ]]; then
-      log::red "Could not build tarball for package: $pkg"
+      log::red "Could not build 'gopskit' tarball"
       return "$rc"
     fi
   done
 
-  log::yellow "Building 'gopskit' tarball"
-  tarb=$(printf "%s/gopskit_%s.tar.gz" "$BUILD_DIR" "$PLATFORM")
-  tar czfvP "$tarb" -C "$BUILD_TMP_DIR" "${PKGS[@]}" "LICENSE" >/dev/null
-  rc=$?
-  if [[ $rc -ne 0 ]]; then
-    log::red "Could not build 'gopskit' tarball"
-    return "$rc"
-  fi
+  log::yellow "Changing working directory to $BUILD_DIR"
+  old_wd=$(pwd)
+  cd "$BUILD_DIR"
 
-  log::green "Built 'gopskit' executables!"
+  file=$(printf "%s_checksums.txt" "$PLATFORM")
+  [ -e "$file" ] && rm -f "$file"
+  for dtar in *.tar.gz; do
+    sha256sum "$dtar" >>"$file"
+    rc=$?
+    if [[ $rc -ne 0 ]]; then
+      log::red "Could not calculate SHA256 checksums for tarball: $dtar"
+      return "$rc"
+    fi
+  done
+
+  # switch back
+  cd "$old_wd"
+
+  log::green "Built 'gopskit' distribution tarballs!"
   return 0
 }
 
 # ----------------------
 #   'calculate_checksums' function
 # ----------------------
-function calculate_checksums() {
+function release::calculate_checksums() {
   log::yellow "Changing working directory to $BUILD_DIR"
-  old_pwd=$(pwd)
+  old_wd=$(pwd)
   cd "$BUILD_DIR"
 
-  for pkg in "${PKGS[@]}"; do
-    log::yellow "Calculating checksums for $pkg"
-    output=$(printf "%s_%s.tar.gz" "$pkg" "$PLATFORM")
-    sha256sum "$output" >>"$BUILD_DIR/checksums.txt"
+  file="CHECKSUMS.txt"
+  [ -e "$file" ] && rm -f "$file"
+  for dtar in *.txt; do
+    echo "# SHA256" >>"$file"
+    cat "$dtar" >>"$file"
     rc=$?
     if [[ $rc -ne 0 ]]; then
-      log::red "Could not calculate SHA256 checksums for package: $pkg"
+      log::red "Could not calculate SHA256 checksums for tarball: $dtar"
       return "$rc"
     fi
   done
 
-  log::yellow "Calculating checksums for 'gopskit'"
-  tarba=$(printf "gopskit_%s.tar.gz" "$PLATFORM")
-  sha256sum "$tarba" >>"$BUILD_DIR/checksums.txt"
-  rc=$?
-  if [[ $rc -ne 0 ]]; then
-    log::red "Could not calculate SHA256 checksums for 'gopskit' tarball"
-    return "$rc"
-  fi
-
   # switch back
-  cd "$old_pwd"
+  cd "$old_wd"
 
   log::green "Calculated 'gopskit' SHA256 checksums!"
   return 0
@@ -149,6 +197,8 @@ function calculate_checksums() {
 #   MAIN
 # --------------------------------
 function main() {
+  local cmd=${1}
+
   # initialize constants
   raw=$(bazel --output_user_root="$BAZEL_CACHE_PATH" query 'kind("go_binary", //...)' 2>/dev/null)
   while IFS="$(printf '\n')" read -r line; do LABELS+=("$line"); done <<<"$raw"
@@ -170,43 +220,51 @@ function main() {
     fi
   fi
 
-  # create build directories
-  create_directories
-  rc=$?
-  if [[ $rc -ne 0 ]]; then
-    log::red "Could not create build directories!"
-    return "$rc"
-  fi
-
-  # build Go binaries
-  build_executables
-  rc=$?
-  if [[ $rc -ne 0 ]]; then
-    log::red "Could not build 'gopskit' executables!"
-    return "$rc"
-  fi
-
-  # build tarballs
-  build_tarballs
-  rc=$?
-  if [[ $rc -ne 0 ]]; then
-    log::red "Could not build 'gopskit' tarballs!"
-    return "$rc"
-  fi
-
-  # checksums
-  calculate_checksums
-  rc=$?
-  if [[ $rc -ne 0 ]]; then
-    log::red "Could not calculate 'gopskit' checksums!"
-    return "$rc"
-  fi
-
-  # cleanup
-  if [[ -d "$BUILD_TMP_DIR" ]]; then
-    log::yellow "Removing temporary directory within build directory: $BUILD_TMP_DIR"
-    rm -rf "$BUILD_TMP_DIR"
-  fi
+  case "${cmd}" in
+  executables)
+    release::build_executables
+    rc=$?
+    if [[ $rc -ne 0 ]]; then
+      log::red "Could not build 'gopskit' executables!"
+      return "$rc"
+    fi
+    ;;
+  tarballs)
+    release::build_tarballs
+    rc=$?
+    if [[ $rc -ne 0 ]]; then
+      log::red "Could not build 'gopskit' tarballs!"
+      return "$rc"
+    fi
+    ;;
+  checksums)
+    release::calculate_checksums
+    rc=$?
+    if [[ $rc -ne 0 ]]; then
+      log::red "Could not calculate 'gopskit' checksums!"
+      return "$rc"
+    fi
+    ;;
+  cleanup)
+    if [[ -d "$BUILD_TMP_DIR" ]]; then
+      log::yellow "Removing temporary directory within build directory: $BUILD_TMP_DIR"
+      rm -rf "$BUILD_TMP_DIR"
+    fi
+    rc=$?
+    if [[ $rc -ne 0 ]]; then
+      log::red "Could not cleanup 'gopskit' build directories!"
+      return "$rc"
+    fi
+    ;;
+  help)
+    release::usage
+    return $?
+    ;;
+  *)
+    log::red "Unknown command: ${cmd}. See 'help' command for usage information:"
+    release::usage
+    ;;
+  esac
 
   log::green "release.sh finished!"
 }

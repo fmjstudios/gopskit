@@ -20,30 +20,13 @@ concurrency:
   group: "${{ github.workflow }}@${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
 
 jobs:
-  info:
-    name: Gather information
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Get Go Version
-        run: |
-          VERSION=$(bash scripts/status.sh | grep GO_VERSION | cut -d' ' -f 2)
-          echo "go_version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Get Bazel Version
-        run: |
-          VERSION=$(cat .bazelversion)
-          echo "bazel_version=$VERSION" >> "$GITHUB_OUTPUT"
-
   test:
     name: Test
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        arch: [amd64, arm64]
     runs-on: ${{ matrix.os }}
-    needs: [info]
     env:
       CACHE_PATH: ${{ matrix.os == 'macos-latest' && '/private/var/tmp/_bazel_runner/' || '~/.cache/bazel' }}
     steps:
@@ -65,19 +48,32 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bazel-
 
+      - name: Determine Bazel platform
+        id: platform
+        run: |
+          os="${{ runner.os }}"
+          platform="linux"
+          case "$os" in
+            Windows) platform="windows" ;;
+            macOS) platform="darwin" ;;
+          esac
+          final=$(printf "@io_bazel_rules_go//go/toolchain:%s_%s" "$platform" ${{ matrix.arch }})
+          echo "platform=$final" >> "$GITHUB_OUTPUT"
+
       - name: Build Bazel artifacts
         run: |
-          bazel --output_user_root=${{ env.CACHE_PATH }} build //...
+          bazel --output_user_root=${{ env.CACHE_PATH }} build --platforms=${{ steps.platform.outputs.platform }} //...
 
       - name: Test Bazel artifacts
         run: |
-          bazel --output_user_root=${{ env.CACHE_PATH }} test //...
+          bazel --output_user_root=${{ env.CACHE_PATH }} test --platforms=${{ steps.platform.outputs.platform }} //...
 
-      # Fail here
+      # Fail here if tests didn't succeed
       - name: Generate Release artifacts
         if: ${{ success() }}
         run: |
-          bash scripts/release.sh
+          scripts/release.sh executables
+          scripts/release.sh tarballs
 
       - name: Upload Release artifacts
         if: ${{ success() }}
@@ -90,7 +86,7 @@ jobs:
 
   dispatch:
     runs-on: ubuntu-latest
-    needs: [info, test]
+    needs: [test]
     steps:
       - name: Dispatch a release workflow run
         if: ${{ !failure() }}

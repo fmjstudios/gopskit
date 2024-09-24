@@ -54,8 +54,12 @@ jobs:
           path: dist
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-          run-id: ${{github.event.client_payload.run_id }}
+          run-id: ${{ github.event.client_payload.run_id }}
+
+      - name: Build final SHA256 checksums
+        run: |
+          scripts/release.sh checksums
 
       - name: Upload artifacts to Release-Please GitHub release
         run: |
-          gh release upload ${{ needs.release.outputs.tag }} dist/*.tar.gz dist/*.txt
+          gh release upload ${{ needs.release.outputs.tag }} dist/*.tar.gz dist/CHECKSUMS.txt
