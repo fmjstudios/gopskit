@@ -1,19 +1,23 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "util",
+    name = "helpers",
     srcs = [
         "crypto.go",
         "merge.go",
         "primitives.go",
+        "slices.go",
     ],
-    importpath = "github.com/fmjstudios/gopskit/pkg/util",
+    importpath = "github.com/fmjstudios/gopskit/pkg/helpers",
     visibility = ["//visibility:public"],
-    deps = ["//pkg/cmd"],
+    deps = [
+        "//pkg/proc",
+        "@org_golang_x_sync//errgroup",
+    ],
 )
 
 alias(
     name = "go_default_library",
-    actual = ":util",
+    actual = ":helpers",
     visibility = ["//visibility:public"],
 )

@@ -1,4 +1,4 @@
-package util
+package helpers
 
 import (
 	"fmt"
@@ -49,6 +49,16 @@ func DeepMergeMap(dst, src map[string]interface{}) error {
 const (
 	DELIMITER        string = "."
 	REPLACE_TEMPLATE string = "{{ .Values | get \"%s\" \"%v\" }}"
+)
+
+var (
+	BumpValues    = []string{"annotation", "label", "securitycontext", "affinity"}
+	BumpTemlplate = `  {{- if index .Values "%s" "chartValues"  | get "%s" "" }}
+  {{ with index .Values "%s" "chartValues" | get "%s" }}
+  annotations:
+  {{- toYaml . | nindent %d }}
+  {{- end }}
+  {{- end }}`
 )
 
 // TODO(FMJdev): add bump stop values which act as base case so we do not template Kubernetes labels etc.

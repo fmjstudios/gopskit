@@ -1,13 +1,14 @@
-package util
+package helpers
 
 import (
 	"bytes"
+	"context"
 	b64 "encoding/base64"
 	"fmt"
+	"github.com/fmjstudios/gopskit/pkg/proc"
+	"golang.org/x/sync/errgroup"
 	"math/rand/v2"
-	"strings"
-
-	"github.com/fmjstudios/gopskit/pkg/cmd"
+	"os/exec"
 )
 
 type PassphraseConfig struct {
@@ -77,9 +78,10 @@ func WithEncoding(encoding Encoding) func(cfg *DiffieHellmanConfig) {
 
 func GenerateDiffieHellmanParams(opts ...DiffieHellmanOpt) (string, error) {
 	var params string
+	errg, _ := errgroup.WithContext(context.Background())
 
 	// sanity
-	_, err := cmd.LookPath("openssl")
+	_, err := exec.LookPath("openssl")
 	if err != nil {
 		return "", fmt.Errorf("openssl is not installed on the system")
 	}
@@ -96,10 +98,25 @@ func GenerateDiffieHellmanParams(opts ...DiffieHellmanOpt) (string, error) {
 	args := []string{"openssl", "dhparam", fmt.Sprintf("%d", cfg.Bits)}
 	var bufStdO, bufStdE bytes.Buffer
 
-	e := cmd.NewExecutor(cmd.WithInheritedEnv())
-	_, _, err = e.Execute(strings.Join(args, " "), cmd.WithWriters(bufStdO, bufStdE))
+	e, err := proc.NewExecutor(proc.WithInheritedEnv())
 	if err != nil {
 		return "", err
+	}
+
+	errg.Go(func() error {
+		_, err := e.Execute(args, proc.WithWriters(bufStdO, bufStdE))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err := errg.Wait(); err != nil {
+		return "", proc.ExecuteError{
+			ExitCode: e.ProcessState.ExitCode(),
+			Err:      err,
+		}
 	}
 
 	switch cfg.Encoding {
