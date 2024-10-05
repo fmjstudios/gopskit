@@ -5,16 +5,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewPrepareCommand(a *app.App) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:              "prepare",
-		Short:            "Prepare Vault for various applications",
-		Long:             "Prepare Vault for various applications like GitLab, AWX or Keycloak",
-		TraverseChildren: true,
+var _ app.CLIOpt = NewPrepareCommand // assure type compatibility
+
+func NewPrepareCommand() func(app *app.State) *cobra.Command {
+	return func(app *app.State) *cobra.Command {
+		cmd := &cobra.Command{
+			Use:              "prepare",
+			Short:            "Prepare Vault for various applications",
+			Long:             "Prepare Vault for various applications like GitLab, AWX or Keycloak",
+			TraverseChildren: true,
+		}
+
+		// subcommands
+		for _, subc := range PrepareSubcommands {
+			cmd.AddCommand(subc()(app))
+		}
+
+		return cmd
 	}
-
-	// subcommands
-	cmd.AddCommand(NewPrepareKeycloakCommand(a))
-
-	return cmd
 }
