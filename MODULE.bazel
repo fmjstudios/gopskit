@@ -26,6 +26,7 @@ use_repo(
     "io_k8s_cli_runtime",
     "io_k8s_client_go",
     "org_golang_x_mod",
+    "org_golang_x_sync",
     "org_golang_x_text",
     "org_uber_go_zap",
 )
