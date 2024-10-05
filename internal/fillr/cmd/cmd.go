@@ -2,17 +2,21 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/fmjstudios/gopskit/internal/fillr/app"
-	"github.com/fmjstudios/gopskit/pkg/filesystem"
-	"github.com/fmjstudios/gopskit/pkg/util"
-	"gopkg.in/yaml.v3"
-
+	"github.com/fmjstudios/gopskit/pkg/fs"
+	"github.com/fmjstudios/gopskit/pkg/helpers"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
+	"os"
+	"sync"
 )
 
-func NewRootCommand() *cobra.Command {
+var (
+	// Commands is a slice of CLIOpt options for subcommands of the 'ssolo' CLI
+	Commands = []app.CLIOpt{}
+)
+
+func NewRootCommand(fillr *app.State) *cobra.Command {
 	// placeholders for flags values
 	var (
 		output   string
@@ -20,8 +24,8 @@ func NewRootCommand() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   app.Name + " [FILE]",
-		Short: fmt.Sprintf("%s CLI", app.Name),
+		Use:   fillr.Name + " [FILE]",
+		Short: fmt.Sprintf("%s CLI", fillr.Name),
 		Long:  "Manage authentication for Kubernetes applications using Keycloak",
 		Args: func(cmd *cobra.Command, args []string) error {
 			// ensure 1 argument
@@ -31,7 +35,7 @@ func NewRootCommand() *cobra.Command {
 
 			// ensure the given path exists
 			path := args[0]
-			exists := filesystem.CheckIfExists(path)
+			exists := fs.CheckIfExists(path)
 			if !exists {
 				return fmt.Errorf("cannot read values input from non-existing file: %s", path)
 			}
@@ -65,7 +69,7 @@ fillr my-values.yaml -t "{{ index .Values \"kubescape-operator\" \"chartValues\"
 			}
 
 			// update output map
-			util.ReplaceRecursive(values, nil, out, template)
+			helpers.ReplaceRecursive(values, nil, out, template)
 
 			// render YAML
 			yaml, err := yaml.Marshal(out)
@@ -87,7 +91,18 @@ fillr my-values.yaml -t "{{ index .Values \"kubescape-operator\" \"chartValues\"
 	}
 
 	cmd.PersistentFlags().StringVarP(&output, "output", "o", "", "The file path to output fillr's result to")
-	cmd.PersistentFlags().StringVarP(&template, "template", "t", util.REPLACE_TEMPLATE, "The template to use for each YAML key")
+	cmd.PersistentFlags().StringVarP(&template, "template", "t", helpers.REPLACE_TEMPLATE, "The template to use for each YAML key")
+
+	// add subcommands
+	var wg sync.WaitGroup
+	wg.Add(len(Commands))
+	for _, opt := range Commands {
+		go func() {
+			cmd.AddCommand(opt()(fillr))
+			wg.Done()
+		}()
+	}
+	wg.Wait()
 
 	return cmd
 }

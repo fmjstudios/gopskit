@@ -4,13 +4,17 @@ import (
 	"github.com/fmjstudios/gopskit/internal/ssolo/app"
 	"github.com/fmjstudios/gopskit/internal/ssolo/cmd"
 	_ "github.com/fmjstudios/gopskit/pkg/stamp"
+	"log"
 )
 
 func main() {
-	a := app.New()
-	rCmd := cmd.NewRootCommand(a)
+	kern, err := app.New()
+	if err != nil {
+		log.Fatalf("could not initialize %s: %v", kern.Name, err)
+	}
 
-	if err := rCmd.Execute(); err != nil {
-		a.Logger.Fatalf("%s exited with error: %v\n", a.Name, err)
+	cmdRoot := cmd.NewRootCommand(kern)
+	if err := cmdRoot.Execute(); err != nil {
+		kern.Log.Fatalf("%s exited with error: %v\n", kern.Name, err)
 	}
 }

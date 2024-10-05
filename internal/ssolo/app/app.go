@@ -1,58 +1,77 @@
 package app
 
 import (
-	"github.com/fmjstudios/gopskit/pkg/cmd"
-	"github.com/fmjstudios/gopskit/pkg/common"
+	"fmt"
+	"github.com/fmjstudios/gopskit/pkg/core"
+	"github.com/fmjstudios/gopskit/pkg/fs"
 	"github.com/fmjstudios/gopskit/pkg/kube"
-	"github.com/fmjstudios/gopskit/pkg/logger"
-	"github.com/fmjstudios/gopskit/pkg/platform"
+	"github.com/fmjstudios/gopskit/pkg/log"
+	"github.com/fmjstudios/gopskit/pkg/proc"
 	"github.com/fmjstudios/gopskit/pkg/stamp"
-	"go.uber.org/zap"
+	"github.com/spf13/cobra"
 )
 
 const (
 	Name = "ssolo"
 )
 
-type Opt func(a *App)
+// Opt is configuration option for the application State
+type Opt func(a *State)
 
-// type App is the implementation for the `ssolo` command-line application
-type App struct {
-	*common.GOpsKitApp
+type CLIOpt func() func(a *State) *cobra.Command
 
-	// KeyClient is a Keycloak HTTP client, which ssolo uses to configure
-	// Keycloak to authenticate users for certain applications
+// State is the implementation for the `ssolo` command-line application state
+type State struct {
+	*core.API
+
+	// insert KeycloakClient here
+	// VaultClient *vault.Client
 }
 
-// New creates a newly initialized instance of the App type
-func New(opts ...Opt) *App {
-	platform := platform.New(platform.WithApp(Name))
-	logger := logger.New()
-	defer logger.Sync()
+// New creates a newly initialized instance of the State type
+func New(opts ...Opt) (*State, error) {
+	var err error
 
-	exec := cmd.NewExecutor(cmd.WithInheritedEnv())
+	platf, err := fs.Paths(fs.WithAppName(Name))
+	if err != nil {
+		return nil, err
+	}
+
+	lgr := log.New()
+	defer func() {
+		err = lgr.Sync()
+	}()
+	if err != nil {
+		return nil, err
+	}
+
+	exec, err := proc.NewExecutor(proc.WithInheritedEnv())
+	if err != nil {
+		return nil, err
+	}
+
 	kc, err := kube.NewClient()
 	if err != nil {
-		logger.Fatal("could not create Kubernetes Client", zap.String("err", err.Error()))
+		return nil, fmt.Errorf("could not create kubernetes client: %v", err)
 	}
 
 	stamps := stamp.New()
 
-	a := &App{
-		GOpsKitApp: &common.GOpsKitApp{
-			Name:       Name,
-			Executor:   exec,
-			KubeClient: kc,
-			Logger:     logger,
-			Platform:   platform,
-			Stamps:     stamps,
+	a := &State{
+		API: &core.API{
+			Name:  Name,
+			Exec:  exec,
+			Kube:  kc,
+			Log:   lgr,
+			Paths: platf,
+			Stamp: stamps,
 		},
 	}
 
-	// (re-)configure
+	// (re-)configure if the user wants to do so
 	for _, o := range opts {
 		o(a)
 	}
 
-	return a
+	return a, nil
 }
