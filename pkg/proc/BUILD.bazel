@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "proc",
+    srcs = [
+        "errors.go",
+        "proc.go",
+        "util.go",
+    ],
+    importpath = "github.com/fmjstudios/gopskit/pkg/proc",
+    visibility = ["//visibility:public"],
+    deps = ["@org_golang_x_sync//errgroup"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":proc",
+    visibility = ["//visibility:public"],
+)
