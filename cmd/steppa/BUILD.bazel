@@ -5,10 +5,6 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/fmjstudios/gopskit/cmd/steppa",
     visibility = ["//visibility:private"],
-    deps = [
-        "//internal/steppa/app",
-        "//internal/steppa/cmd",
-    ],
 )
 
 go_binary(
