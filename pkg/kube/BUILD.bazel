@@ -13,8 +13,8 @@ go_library(
     importpath = "github.com/fmjstudios/gopskit/pkg/kube",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/filesystem",
-        "//pkg/platform",
+        "//pkg/fs",
+        "//pkg/proc",
         "@io_k8s_api//apps/v1:apps",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_api//networking/v1:networking",

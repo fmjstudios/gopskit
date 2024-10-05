@@ -58,7 +58,7 @@ func (*DefaultPortForwarder) ForwardPorts(method string, restConfig *rest.Config
 }
 
 // PortForward port-forwards a remote port of a Kubernetes container to the local machine
-func (c *KubeClient) PortForward(ctx context.Context, pod corev1.Pod) error {
+func (c *Client) PortForward(ctx context.Context, pod corev1.Pod) error {
 	if pod.Status.Phase != corev1.PodRunning {
 		return fmt.Errorf("uanble to forward ports to a pod that isn't running. Current status: %v", pod.Status.Phase)
 	}

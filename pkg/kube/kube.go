@@ -2,10 +2,11 @@ package kube
 
 import (
 	"errors"
+	"github.com/fmjstudios/gopskit/pkg/fs"
+	"github.com/fmjstudios/gopskit/pkg/proc"
+	"os"
 	"path/filepath"
 
-	"github.com/fmjstudios/gopskit/pkg/filesystem"
-	"github.com/fmjstudios/gopskit/pkg/platform"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -18,13 +19,13 @@ const (
 )
 
 var (
-	searchPaths []string = []string{
-		filepath.Join(platform.Current().Home(), ".kube", "config"),
-		filepath.Join(platform.Current().ConfigDir(), "gopskit", "kubeconfig"),
+	searchPaths = []string{
+		filepath.Join(proc.Must(os.UserHomeDir()), ".kube", "config"),
+		filepath.Join(proc.Must(os.UserConfigDir()), "gopskit", "kubeconfig"),
 	}
 )
 
-type KubeClient struct {
+type Client struct {
 	// ConfigPath is the configuration file path for which the current client(-set) was created
 	ConfigPath string
 
@@ -48,13 +49,13 @@ type KubeClient struct {
 }
 
 // Opt represents a configuration option for the KubeClient
-type Opt func(c *KubeClient)
+type Opt func(c *Client)
 
 // NewClient instantiates a new KubeClient with a configured and embedded Clientset
-func NewClient(opts ...Opt) (*KubeClient, error) {
+func NewClient(opts ...Opt) (*Client, error) {
 	var err error
 
-	kc := &KubeClient{
+	kc := &Client{
 		Executor:      &DefaultRemoteExecutor{},
 		PortForwarder: &DefaultPortForwarder{},
 	}
@@ -92,15 +93,15 @@ func NewClient(opts ...Opt) (*KubeClient, error) {
 
 // WithConfigPath configures the KubeClient with a predetermined path for the 'kubeconfig' file
 // This avoids the usual searches done within findKubeConfig
-func WithConfigPath(path string) func(c *KubeClient) {
-	return func(c *KubeClient) {
+func WithConfigPath(path string) func(c *Client) {
+	return func(c *Client) {
 		c.ConfigPath = path
 	}
 }
 
 // WithNamespace configures the KubeClient with a custom default namespace
-func WithNamespace(namespace string) func(c *KubeClient) {
-	return func(c *KubeClient) {
+func WithNamespace(namespace string) func(c *Client) {
+	return func(c *Client) {
 		c.namespace = namespace
 	}
 }
@@ -115,7 +116,7 @@ func WithNamespace(namespace string) func(c *KubeClient) {
 // possibly valid file
 func findKubeConfig() (string, error) {
 	for _, path := range searchPaths {
-		exists := filesystem.CheckIfExists(path)
+		exists := fs.CheckIfExists(path)
 		if exists {
 			return path, nil
 		} else {

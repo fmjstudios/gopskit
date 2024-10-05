@@ -46,7 +46,7 @@ func (*DefaultRemoteExecutor) Execute(url *url.URL, restConfig *rest.Config, std
 // Exec executes a command within the container of a specific Pod in the current namespace
 // configured for the client. If another namespace is required the ExecInNamespace helper
 // provides an escape hatch
-func (c *KubeClient) Exec(command string, pod corev1.Pod) (string, string, error) {
+func (c *Client) Exec(command string, pod corev1.Pod) (string, string, error) {
 	var err error
 	var stdOut, stdErr bytes.Buffer
 

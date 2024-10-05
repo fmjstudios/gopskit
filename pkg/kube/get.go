@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (c *KubeClient) Namespaces(opts metav1.ListOptions) ([]corev1.Namespace, error) {
+func (c *Client) Namespaces(opts metav1.ListOptions) ([]corev1.Namespace, error) {
 	ns, err := c.Client.CoreV1().Namespaces().List(context.Background(), opts)
 	if err != nil {
 		return nil, err
@@ -17,7 +17,7 @@ func (c *KubeClient) Namespaces(opts metav1.ListOptions) ([]corev1.Namespace, er
 	return ns.Items, nil
 }
 
-func (c *KubeClient) Pods(namespace string, opts metav1.ListOptions) ([]corev1.Pod, error) {
+func (c *Client) Pods(namespace string, opts metav1.ListOptions) ([]corev1.Pod, error) {
 	podL, err := c.Client.CoreV1().Pods(namespace).List(context.Background(), opts)
 	if err != nil {
 		return nil, err
@@ -26,7 +26,16 @@ func (c *KubeClient) Pods(namespace string, opts metav1.ListOptions) ([]corev1.P
 	return podL.Items, nil
 }
 
-func (c *KubeClient) Services(namespace string, opts metav1.ListOptions) ([]corev1.Service, error) {
+func (c *Client) Service(namespace, name string, opts metav1.GetOptions) (*corev1.Service, error) {
+	svc, err := c.Client.CoreV1().Services(namespace).Get(context.Background(), name, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return svc, nil
+}
+
+func (c *Client) Services(namespace string, opts metav1.ListOptions) ([]corev1.Service, error) {
 	svcL, err := c.Client.CoreV1().Services(namespace).List(context.Background(), opts)
 	if err != nil {
 		return nil, err
@@ -35,7 +44,25 @@ func (c *KubeClient) Services(namespace string, opts metav1.ListOptions) ([]core
 	return svcL.Items, nil
 }
 
-func (c *KubeClient) Secrets(namespace string, opts metav1.ListOptions) ([]corev1.Secret, error) {
+func (c *Client) ConfigMap(namespace, name string, opts metav1.GetOptions) (*corev1.ConfigMap, error) {
+	conf, err := c.Client.CoreV1().ConfigMaps(namespace).Get(context.Background(), name, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return conf, nil
+}
+
+func (c *Client) ConfigMaps(namespace string, opts metav1.ListOptions) ([]corev1.ConfigMap, error) {
+	confL, err := c.Client.CoreV1().ConfigMaps(namespace).List(context.Background(), opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return confL.Items, nil
+}
+
+func (c *Client) Secrets(namespace string, opts metav1.ListOptions) ([]corev1.Secret, error) {
 	secL, err := c.Client.CoreV1().Secrets(namespace).List(context.Background(), opts)
 	if err != nil {
 		return nil, err
@@ -44,7 +71,7 @@ func (c *KubeClient) Secrets(namespace string, opts metav1.ListOptions) ([]corev
 	return secL.Items, nil
 }
 
-func (c *KubeClient) Ingresses(namespace string, opts metav1.ListOptions) ([]networkingv1.Ingress, error) {
+func (c *Client) Ingresses(namespace string, opts metav1.ListOptions) ([]networkingv1.Ingress, error) {
 	ingL, err := c.Client.NetworkingV1().Ingresses(namespace).List(context.Background(), opts)
 	if err != nil {
 		return nil, err

@@ -17,7 +17,7 @@ type ApplyOptions struct {
 	UpdateOptions *metav1.UpdateOptions
 }
 
-func (c *KubeClient) Apply(schema schema.GroupVersionResource, resource *unstructured.Unstructured, opts *ApplyOptions) error {
+func (c *Client) Apply(schema schema.GroupVersionResource, resource *unstructured.Unstructured, opts *ApplyOptions) error {
 	var result *unstructured.Unstructured
 	var err error
 
