@@ -3,8 +3,25 @@
 ## ➕ Additions
 
 - [x] Add [`.bazelrc`](https://bazel.build/run/bazelrc)
+- [ ] Add `.env` support with [`godotenv`](https://github.com/joho/godotenv)
+- [ ] add `config` package with file-configuration based on `type`
+- [ ] add `--version`, `--overwrite`, `--silent` flags
+- [ ] add `ui` package
+- [ ] add local BadgerDB with `dump` commands for namespaces
 
 ## ✏️ Planned Changes
+
+- [X] merge `platform` and `filesystem` packages into `fs`
+- [ ] implement better logging format
+- [X] remove obsolete `errors` package
+- [X] merge `env` and `common` packages
+- [X] make current code asynchronous
+- [X] do generel code-cleanup
+- [X] remove non-implemented code besides one-liners in `main.go`
+- [X] rename `util` to `helpers` for consistency
+- [X] rename `cmd` to `proc` for consistency
+- [X] shorten field names in `core.App`
+- [X] rename `logger` to just `log`
 
 ## 💡 Ideas
 
@@ -30,68 +47,70 @@
 - [Benchmark of Flattening nested maps](https://gist.github.com/knadh/9520b2a3f8edf589c450ed7e283ba60f)
 - [GHetzel (Shutterstock) Utility Library](https://github.com/ghetzel/go-stockutil)
 - [System Information - elastic](https://pkg.go.dev/github.com/elastic/go-sysinfo@v1.14.1)
-- [Detect Windows version - `windows` package](https://stackoverflow.com/questions/44363911/detect-windows-version-in-go-to-figure-out-the-starup-folder)
+- [Windows version -
+  `windows` package](https://stackoverflow.com/questions/44363911/detect-windows-version-in-go-to-figure-out-the-starup-folder)
 - [RegEx Example](https://gist.github.com/eculver/d1338aa87e87890e05d4f61ed0a33d6e)
 - [Go Command Execution Examples](https://github.com/kjk/the-code/blob/master/go/advanced-exec/03-live-progress-and-capture-v2.go)
+- [Jay Conrod's `ctxio` package](https://github.com/jayconrod/go-public/blob/main/ctxio/ctxio.go)
 
 ## 🗒️ Notes
 
 ```go
  // YAML Merge
 
- path := os.Args[1]
+path := os.Args[1]
 
- mp, err := tools.AddSecretValue(path, map[string]interface{}{
-  "hooks": map[string]interface{}{
-   "awxToken":       "fick dich",
-   "kubescapeToken": "bastard",
-   "vaultToken":     "thisIsANewValue",
-  },
- }, true)
+mp, err := tools.AddSecretValue(path, map[string]interface{}{
+"hooks": map[string]interface{}{
+"awxToken":       "fick dich",
+"kubescapeToken": "bastard",
+"vaultToken":     "thisIsANewValue",
+},
+}, true)
 
- if err != nil {
-  panic(err.Error())
- }
+if err != nil {
+panic(err.Error())
+}
 
- for k, v := range mp {
-  fmt.Printf("Key: %s - Value: %s\n", k, v)
- }
+for k, v := range mp {
+fmt.Printf("Key: %s - Value: %s\n", k, v)
+}
 
- content, err := yaml.Marshal(mp)
- if err != nil {
-  panic(err)
- }
+content, err := yaml.Marshal(mp)
+if err != nil {
+panic(err)
+}
 
- if err := os.WriteFile("/tmp/gopskit-test/fillr-out-values.yaml", content, 0600); err != nil {
-  panic(err)
- }
+if err := os.WriteFile("/tmp/gopskit-test/fillr-out-values.yaml", content, 0600); err != nil {
+panic(err)
+}
 
- // GIT
+// GIT
 
- dir, err := os.Getwd()
- if err != nil {
-  panic(err)
- }
+dir, err := os.Getwd()
+if err != nil {
+panic(err)
+}
 
- git, err := filesystem.RevParseGitRoot(dir)
- if err != nil {
-  panic(err)
- }
+git, err := filesystem.RevParseGitRoot(dir)
+if err != nil {
+panic(err)
+}
 
- fmt.Printf("Found Git directory at: %s\n", git)
+fmt.Printf("Found Git directory at: %s\n", git)
 
- // SmallStep
- res, err := tools.GenerateStepValues()
- if err != nil {
-  log.Fatal(err)
- }
+// SmallStep
+res, err := tools.GenerateStepValues()
+if err != nil {
+log.Fatal(err)
+}
 
- mp, err := tools.AddSecretStepValues(res, util.GeneratePassphrase(util.WithLength(48)), os.Args[1])
- if err != nil {
-  log.Fatal(err)
- }
+mp, err := tools.AddSecretStepValues(res, util.GeneratePassphrase(util.WithLength(48)), os.Args[1])
+if err != nil {
+log.Fatal(err)
+}
 
- for k, v := range mp {
-  fmt.Printf("Key: %s - Value: %s\n", k, v)
- }
+for k, v := range mp {
+fmt.Printf("Key: %s - Value: %s\n", k, v)
+}
 ```
