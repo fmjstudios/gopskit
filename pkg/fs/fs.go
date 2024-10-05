@@ -1,4 +1,8 @@
-package filesystem
+// Package fs implements filesystem utilities as well as a Paths Object which holds references, to
+// important directories like the platform-specific logging for configuration directories. These
+// paths are either built for the generic 'gopskit' application name (to ensure our files don't
+// crowd global OS directories) or for custom names, which is configurable with Opt arguments for NewPaths.
+package fs
 
 import (
 	"errors"
@@ -6,14 +10,6 @@ import (
 	"io/fs"
 	"os"
 )
-
-// func CreateFile(path string, data []byte) error {
-
-// }
-
-// func CreateDirectory(path string, data []byte) error {
-
-// }
 
 // Remove removes all files and directories at the specified path. Before running delete operations the
 // function checks if the path actually exists, if it does not, it exits silently. If an error occurs

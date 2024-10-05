@@ -1,4 +1,4 @@
-package filesystem
+package fs
 
 import (
 	"errors"
@@ -7,15 +7,25 @@ import (
 	"path/filepath"
 )
 
-// RevParseGitRoot fuck u
-func RevParseGitRoot(path string) (string, error) {
+var (
+	KnownGitDir     = ".git"
+	KnownGitMarkers = []string{"config", "HEAD", "branches", "objects", "refs"}
+)
+
+// ParseGitRoot traverses the filesystem upwards from the given path and checks each
+// new directory whether it contains a KnownGitDir (.git subdirectory). If the
+// subdirectory is found we check if it contains the KnownGitMarkers. If so the path
+// is returned with a nil error.
+//
+// Otherwise, the first errors that occurs is returned alongside an empty string.
+func ParseGitRoot(path string) (string, error) {
 	path, err := filepath.Abs(path)
 	if err != nil {
 		return "", nil
 	}
 
 	for {
-		gitDir := filepath.Join(path, ".git")
+		gitDir := filepath.Join(path, KnownGitDir)
 		info, err := os.Stat(gitDir)
 		if err != nil {
 			return "", err
@@ -57,8 +67,7 @@ func RevParseGitRoot(path string) (string, error) {
 // findGitMarkers checks a given path for the existence of significant directories and files
 // related to Git VCS
 func findGitMarkers(path string) (bool, error) {
-	markers := []string{"config", "HEAD", "branches", "objects", "refs"}
-	for _, v := range markers {
+	for _, v := range KnownGitMarkers {
 		_, err := os.Stat(filepath.Join(path, v))
 
 		if err != nil {
