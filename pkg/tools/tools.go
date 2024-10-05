@@ -1,4 +1,4 @@
-// package tools implements the API to other tools like Helmfile, or Smallstep's 'step' CLI
+// Package tools implements the API to other tools like Helmfile, or Smallstep's 'step' CLI
 // Initially I wanted to compile in the direct sources from their respective Go modules
 //
 // However, Bazel struggles with compilation of the dependencies, mainly due to issues with the
@@ -8,9 +8,9 @@ package tools
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/fmjstudios/gopskit/pkg/proc"
 	"strings"
 
-	"github.com/fmjstudios/gopskit/pkg/cmd"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -46,7 +46,7 @@ func Find() (map[Executable]string, error) {
 	t := make(map[Executable]string)
 
 	for _, v := range executables {
-		path, err := cmd.LookPath(v.String())
+		path, err := proc.LookPath(v.String())
 		if err != nil {
 			return nil, fmt.Errorf("could not find tool: %s. error: %v", v, err)
 		}

@@ -3,14 +3,12 @@ package tools
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/fmjstudios/gopskit/pkg/fs"
+	"github.com/fmjstudios/gopskit/pkg/helpers"
+	"github.com/fmjstudios/gopskit/pkg/proc"
+	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
-	"strings"
-
-	"github.com/fmjstudios/gopskit/pkg/cmd"
-	"github.com/fmjstudios/gopskit/pkg/filesystem"
-	"github.com/fmjstudios/gopskit/pkg/util"
-	"gopkg.in/yaml.v3"
 )
 
 type StepValuesOpt func(cfg *StepValuesConfig)
@@ -55,7 +53,7 @@ func WithDeploymentType(deploymentType string) func(cfg *StepValuesConfig) {
 
 func GenerateStepValues(opts ...StepValuesOpt) (*StepHelmValues, error) {
 	// sanity
-	_, err := cmd.LookPath("step")
+	_, err := proc.LookPath("step")
 	if err != nil {
 		return nil, fmt.Errorf("step CLI is not installed or available in PATH. cannot continue")
 	}
@@ -74,16 +72,16 @@ func GenerateStepValues(opts ...StepValuesOpt) (*StepHelmValues, error) {
 		o(cfg)
 	}
 
-	pw := util.GeneratePassphrase(util.WithLength(64))
+	pw := helpers.GeneratePassphrase(helpers.WithLength(64))
 	pwB64 := base64.StdEncoding.EncodeToString([]byte(pw))
 
-	tmp, err := filesystem.TempDir("step")
+	tmp, err := fs.TempDir("step")
 	if err != nil {
 		return nil, err
 	}
 
 	pwPath := filepath.Join(tmp, "step-ca-password.txt")
-	if err := filesystem.Write(pwPath, []byte(pwB64)); err != nil {
+	if err := fs.Write(pwPath, []byte(pwB64)); err != nil {
 		return nil, err
 	}
 
@@ -106,8 +104,12 @@ func GenerateStepValues(opts ...StepValuesOpt) (*StepHelmValues, error) {
 		"--provisioner",
 		cfg.Provisioner,
 	}
-	e := cmd.NewExecutor()
-	_, _, err = e.Execute(strings.Join(args, " "), cmd.WithOutputFiles(valPath))
+	e, err := proc.NewExecutor()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = e.Execute(args, proc.WithOutputs(valPath))
 	if err != nil {
 		return nil, err
 	}

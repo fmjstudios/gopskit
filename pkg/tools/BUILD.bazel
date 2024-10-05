@@ -11,9 +11,9 @@ go_library(
     importpath = "github.com/fmjstudios/gopskit/pkg/tools",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/cmd",
-        "//pkg/filesystem",
-        "//pkg/util",
+        "//pkg/fs",
+        "//pkg/helpers",
+        "//pkg/proc",
         "@com_github_go_resty_resty_v2//:resty",
         "@com_github_vmware_labs_yaml_jsonpath//pkg/yamlpath",
         "@in_gopkg_yaml_v3//:yaml_v3",
