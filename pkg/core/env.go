@@ -1,6 +1,9 @@
-package env
+package core
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 type Environment int
 
@@ -35,13 +38,18 @@ func (e Environment) IsDevelopment() bool {
 	return e == Development
 }
 
-func FromString(s string) Environment {
+// EnvFromString matches a string value for a known Environment returns the
+// index (int) value for the Environment. If an invalid Environment is given,
+// it returns Development along is a non-nil error
+func EnvFromString(s string) (Environment, error) {
 	switch strings.ToLower(s) {
-	case "prod":
-		return Production
-	case "stage":
-		return Staging
+	case Production.String():
+		return Production, nil
+	case Staging.String():
+		return Staging, nil
+	case Development.String():
+		return Development, nil
 	default:
-		return Development
+		return Development, fmt.Errorf("invalid environment: %s", s)
 	}
 }

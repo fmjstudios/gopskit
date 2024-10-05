@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "env",
+    srcs = ["env.go"],
+    importpath = "github.com/fmjstudios/gopskit/pkg/env",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":core",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "core",
+    srcs = [
+        "api.go",
+        "env.go",
+    ],
+    importpath = "github.com/fmjstudios/gopskit/pkg/core",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/fs",
+        "//pkg/kube",
+        "//pkg/log",
+        "//pkg/proc",
+        "//pkg/stamp",
+    ],
+)
