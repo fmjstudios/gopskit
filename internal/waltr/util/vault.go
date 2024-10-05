@@ -2,15 +2,22 @@ package util
 
 import (
 	"context"
-	json "encoding/json"
+	"encoding/json"
 	"fmt"
 	"github.com/fmjstudios/gopskit/internal/waltr/app"
-	"github.com/fmjstudios/gopskit/pkg/env"
-	"github.com/fmjstudios/gopskit/pkg/filesystem"
+	"github.com/fmjstudios/gopskit/pkg/core"
+	"github.com/fmjstudios/gopskit/pkg/fs"
+	"github.com/fmjstudios/gopskit/pkg/helpers"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path/filepath"
 	"strings"
+	"time"
+)
+
+var (
+	KnownUnsealTypes = []string{"seal \"alicloudkms\"", "seal \"awskms\"", "seal \"azurekeyvault\"",
+		"seal \"gcpckms\"", "seal \"ocikms\"", "seal \"pkcs11\"", "seal \"transit\""}
 )
 
 // Credentials is a custom type which is used to write and load Vault credentials to and from a file
@@ -23,25 +30,25 @@ type Credentials struct {
 // CredentialPath builds the filesystem path to write the credentials to after we unseal the Vault,
 // since it most likely is required for later commands. This function make the path deterministic
 // per execution env.Environment.
-func CredentialPath(a *app.App, env env.Environment) string {
-	return filepath.Join(a.Platform.CacheDir(), env.String(), "vault-credentials.json")
+func CredentialPath(a *app.State, env core.Environment) string {
+	return filepath.Join(a.Paths.Cache, env.String(), "vault-credentials.json")
 }
 
 // WriteCredentials writes the Vault Credentials to the CredentialPath for the given env.Environment
-func WriteCredentials(a *app.App, env env.Environment, credentials *Credentials) error {
+func WriteCredentials(a *app.State, env core.Environment, credentials *Credentials) error {
 	p := CredentialPath(a, env)
 	jsn, err := json.MarshalIndent(credentials, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	return filesystem.Write(p, jsn)
+	return fs.Write(p, jsn)
 }
 
 // ReadCredentials reads the Vault Credentials from the CredentialPath for the given env.Environment
-func ReadCredentials(a *app.App, env env.Environment) (*Credentials, error) {
+func ReadCredentials(a *app.State, env core.Environment) (*Credentials, error) {
 	p := CredentialPath(a, env)
-	raw, err := filesystem.Read(p)
+	raw, err := fs.Read(p)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +63,7 @@ func ReadCredentials(a *app.App, env env.Environment) (*Credentials, error) {
 }
 
 // AuthMethods retrieves the list of enabled authentication methods from the current Vault instance
-func AuthMethods(a *app.App) ([]string, error) {
+func AuthMethods(a *app.State) ([]string, error) {
 	// get current methods
 	m, err := a.VaultClient.System.AuthListEnabledMethods(context.Background())
 	if err != nil {
@@ -64,7 +71,7 @@ func AuthMethods(a *app.App) ([]string, error) {
 	}
 
 	var methods []string
-	for k, _ := range m.Data {
+	for k := range m.Data {
 		methods = append(methods, k)
 		continue
 	}
@@ -73,7 +80,7 @@ func AuthMethods(a *app.App) ([]string, error) {
 }
 
 // SecretsEngines retrieves the list of enabled secrets engines from the current Vault instance
-func SecretsEngines(a *app.App) ([]string, error) {
+func SecretsEngines(a *app.State) ([]string, error) {
 	// get current secrets engines
 	s, err := a.VaultClient.System.MountsListSecretsEngines(context.Background())
 	if err != nil {
@@ -81,7 +88,7 @@ func SecretsEngines(a *app.App) ([]string, error) {
 	}
 
 	var engines []string
-	for k, _ := range s.Data {
+	for k := range s.Data {
 		engines = append(engines, k)
 		continue
 	}
@@ -90,7 +97,7 @@ func SecretsEngines(a *app.App) ([]string, error) {
 }
 
 // Policies retrieves a list of the currently enabled policies
-func Policies(a *app.App) ([]string, error) {
+func Policies(a *app.State) ([]string, error) {
 	p, err := a.VaultClient.System.PoliciesListAclPolicies(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("could not list policies: %v", err)
@@ -100,7 +107,7 @@ func Policies(a *app.App) ([]string, error) {
 }
 
 // PasswordPolicies retrieves a list of the currently enabled password policies
-func PasswordPolicies(a *app.App) ([]string, error) {
+func PasswordPolicies(a *app.State) ([]string, error) {
 	p, err := a.VaultClient.System.PoliciesListPasswordPolicies(context.Background())
 	if err != nil {
 		// mitigate empty policies
@@ -115,7 +122,7 @@ func PasswordPolicies(a *app.App) ([]string, error) {
 }
 
 // KubernetesAuthRoles retrieves a list of the currently enabled Kubernetes Auth roles within Vault
-func KubernetesAuthRoles(a *app.App) ([]string, error) {
+func KubernetesAuthRoles(a *app.State) ([]string, error) {
 	k, err := a.VaultClient.Auth.KubernetesListAuthRoles(context.Background())
 	if err != nil {
 		// mitigate empty policies
@@ -130,7 +137,7 @@ func KubernetesAuthRoles(a *app.App) ([]string, error) {
 }
 
 // GeneratePasswordFromPolicy ...
-func GeneratePasswordFromPolicy(a *app.App, policy string) (string, error) {
+func GeneratePasswordFromPolicy(a *app.State, policy string) (string, error) {
 	pass, err := a.VaultClient.System.PoliciesGeneratePasswordFromPasswordPolicy(
 		context.Background(),
 		policy,
@@ -142,14 +149,16 @@ func GeneratePasswordFromPolicy(a *app.App, policy string) (string, error) {
 }
 
 // Pods returns a list of Kubernetes' Pods matching the default (or custom) Vault label
-func Pods(a *app.App, namespace, label string) ([]corev1.Pod, error) {
+func Pods(a *app.State, namespace, label string) ([]corev1.Pod, error) {
 	if label == "" {
+		a.Log.Debugf("no label provided for Pods search, using default label: %s", app.DefaultLabel)
 		label = app.DefaultLabel
 	}
 
-	pods, err := a.KubeClient.Pods(namespace, metav1.ListOptions{
+	pods, err := a.Kube.Pods(namespace, metav1.ListOptions{
 		LabelSelector: label,
 	})
+	a.Log.Debug("found %d pods for label: %s", len(pods), label)
 
 	if err != nil {
 		return nil, err
@@ -158,14 +167,72 @@ func Pods(a *app.App, namespace, label string) ([]corev1.Pod, error) {
 	return pods, nil
 }
 
-// Contains checks if an element is contained within a string slice
-func Contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
+func LeaderPod(a *app.State, pods []corev1.Pod, namespace, label string) (*corev1.Pod, error) {
+	var leader *corev1.Pod
+	var activePods []corev1.Pod
+	var err error
+
+	if len(pods) > 1 {
+		label = fmt.Sprintf("%s,%s", label, "vault-active=true")
+		activePods, err = a.Kube.Pods(namespace, metav1.ListOptions{
+			LabelSelector: label,
+		})
+
+		if err != nil {
+			return nil, err
 		}
 	}
-	return false
+
+	// matched more than one
+	if len(activePods) > 1 {
+		return nil, fmt.Errorf("could not determine Vault leader pod. "+
+			"Invalid configuration: Kubernetes label %s matched more than one pod", label)
+	}
+
+	// no pod is labeled with "vault-active=true"
+	if len(activePods) == 0 {
+		for _, pod := range pods {
+			if strings.Contains(pod.Name, "0") {
+				leader = &pod
+			}
+		}
+
+		if leader == nil {
+			return nil, fmt.Errorf("could not determine Vault leader pod. Unfamiliar naming scheme. " +
+				"None of your Vault Pod names contain a zero")
+		}
+
+		return leader, nil
+	}
+
+	return &pods[0], nil
+}
+
+// EnsureNamespace ensures we only find and use Vault Pods within a single namespace
+func EnsureNamespace(pods []corev1.Pod) (string, error) {
+	var ns []string
+	for _, pod := range pods {
+		ns = append(ns, pod.Namespace)
+	}
+
+	rns := helpers.RemoveDuplicates(ns)
+	if len(rns) > 1 {
+		return "", fmt.Errorf("discovered Vault pods in multiple namespaces: %v! Please set the namespace option", rns)
+	}
+
+	return ns[0], nil
+}
+
+func WaitUntilRunning(a *app.State, pod corev1.Pod) {
+	for {
+		if pod.Status.Phase != corev1.PodRunning {
+			a.Log.Infof("main vault Pod: %s is not running yet - waiting for Pod to start", pod.Name)
+			time.Sleep(2500 * time.Millisecond)
+		} else {
+			a.Log.Infof("main vault Pod: %s is running", pod.Name)
+			break
+		}
+	}
 }
 
 // Policies

@@ -7,17 +7,17 @@ import (
 )
 
 // DisableAshHistory does what it says...
-func DisableAshHistory(a *app.App, pod v1.Pod) error {
+func DisableAshHistory(a *app.State, pod v1.Pod) error {
 	// remove existing history file
 	deleteCmd := []string{"rm", "-rf", "/home/vault/.ash_history"}
-	_, _, err := a.KubeClient.Exec(strings.Join(deleteCmd, " "), pod)
+	_, _, err := a.Kube.Exec(strings.Join(deleteCmd, " "), pod)
 	if err != nil {
 		return err
 	}
 
 	// link history to /dev/null
 	linkCmd := []string{"ln", "-s", "/dev/null", "/home/vault/.ash_history"}
-	_, _, err = a.KubeClient.Exec(strings.Join(linkCmd, " "), pod)
+	_, _, err = a.Kube.Exec(strings.Join(linkCmd, " "), pod)
 	if err != nil {
 		return err
 	}
