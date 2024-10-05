@@ -1,11 +1,12 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "logger",
-    srcs = ["logger.go"],
-    importpath = "github.com/fmjstudios/gopskit/pkg/logger",
+    name = "log",
+    srcs = ["log.go"],
+    importpath = "github.com/fmjstudios/gopskit/pkg/log",
     visibility = ["//visibility:public"],
     deps = [
+        "@org_golang_x_sync//errgroup",
         "@org_uber_go_zap//:zap",
         "@org_uber_go_zap//zapcore",
     ],
@@ -13,6 +14,6 @@ go_library(
 
 alias(
     name = "go_default_library",
-    actual = ":logger",
+    actual = ":log",
     visibility = ["//visibility:public"],
 )
