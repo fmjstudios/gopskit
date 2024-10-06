@@ -68,6 +68,7 @@ type Store interface {
 	Set(key string, value []byte, opts ...OperationOpt) error
 	Has(key string, opts ...OperationOpt) (contains bool, err error)
 	Namespaces(opts ...OperationOpt) (namespaces []string, err error)
+	Delete(key string, opts ...OperationOpt) error
 	Close() error
 	Path() string
 	Config() badger.Options
