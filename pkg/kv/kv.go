@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/dgraph-io/badger/v4"
+	"github.com/fmjstudios/gopskit/pkg/fs"
+	"os"
 	"sync"
 )
 
@@ -17,14 +19,15 @@ func New(path string, opts ...Opt) (*Database, error) {
 	bOpts := badger.DefaultOptions(path)
 
 	db := &Database{
-		kv:     nil,
-		conf:   bOpts,
-		path:   path,
-		ns:     DefaultNamespaces,
-		opt:    DefaultOperation(),
-		ctx:    ctx,
-		cancel: cancel,
-		lock:   sync.Mutex{},
+		kv:               nil,
+		options:          bOpts,
+		path:             path,
+		namespaces:       DefaultNamespaces,
+		currentNamespace: DefaultNamespaces[0],
+		discardRatio:     DefaultDiscardRatio,
+		ctx:              ctx,
+		cancel:           cancel,
+		lock:             sync.Mutex{},
 	}
 
 	// (re)-configure
@@ -38,8 +41,18 @@ func New(path string, opts ...Opt) (*Database, error) {
 	}
 	wg.Wait()
 
+	// create path if it does not exist
+	exists := fs.CheckIfExists(path)
+	if !exists {
+		err := os.MkdirAll(path, 0755)
+		if err != nil {
+			defer cancel()
+			return nil, err
+		}
+	}
+
 	// db
-	bdb, err := badger.Open(db.conf)
+	bdb, err := badger.Open(db.options)
 	if err != nil {
 		return nil, fmt.Errorf("could not open badger database: %w", err)
 	}
@@ -48,34 +61,13 @@ func New(path string, opts ...Opt) (*Database, error) {
 	return db, nil
 }
 
-// DefaultOperation set's the initial default Operation values
-func DefaultOperation() *Operation {
-	return &Operation{
-		namespace: DefaultNamespaces[0],
-		format:    YAML,
-		lock:      sync.Mutex{},
-	}
-}
-
 // SetNamespace ...
 func (d *Database) SetNamespace(ns string) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	d.opt.namespace = ns
+	d.currentNamespace = ns
 }
-
-// SetFormat ...
-func (d *Database) SetFormat(format Format) {
-	d.lock.Lock()
-	defer d.lock.Unlock()
-
-	d.opt.format = format
-}
-
-//
-// Instantiation Options
-//
 
 // WithPath ...
 func WithPath(path string) Opt {
@@ -87,13 +79,13 @@ func WithPath(path string) Opt {
 	}
 }
 
-// WithExtraNamespaces ...
-func WithExtraNamespaces(namespaces ...string) Opt {
+// WithNamespaces ...
+func WithNamespaces(namespaces ...string) Opt {
 	return func(d *Database) {
 		d.lock.Lock()
 		defer d.lock.Unlock()
 
-		d.ns = append(d.ns, namespaces...)
+		d.namespaces = append(d.namespaces, namespaces...)
 	}
 }
 
@@ -103,7 +95,7 @@ func WithBadgerOptions(opts badger.Options) Opt {
 		d.lock.Lock()
 		defer d.lock.Unlock()
 
-		d.conf = opts
+		d.options = opts
 	}
 }
 
@@ -119,26 +111,22 @@ func WithContext(ctx context.Context) Opt {
 	}
 }
 
-//
-// Operation Options
-//
-
 // WithNamespace ...
-func WithNamespace(namespace string) OperationOpt {
-	return func(o *Operation) {
-		o.lock.Lock()
-		defer o.lock.Unlock()
+func WithNamespace(namespace string) Opt {
+	return func(d *Database) {
+		d.lock.Lock()
+		defer d.lock.Unlock()
 
-		o.namespace = namespace
+		d.currentNamespace = namespace
 	}
 }
 
-// WithFormat ...
-func WithFormat(format Format) OperationOpt {
-	return func(o *Operation) {
-		o.lock.Lock()
-		defer o.lock.Unlock()
+// WithDiscardRatio ...
+func WithDiscardRatio(ratio float64) Opt {
+	return func(d *Database) {
+		d.lock.Lock()
+		defer d.lock.Unlock()
 
-		o.format = format
+		d.discardRatio = ratio
 	}
 }
