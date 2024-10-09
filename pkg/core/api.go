@@ -3,6 +3,7 @@ package core
 import (
 	"github.com/fmjstudios/gopskit/pkg/fs"
 	"github.com/fmjstudios/gopskit/pkg/kube"
+	"github.com/fmjstudios/gopskit/pkg/kv"
 	"github.com/fmjstudios/gopskit/pkg/log"
 	"github.com/fmjstudios/gopskit/pkg/proc"
 	"github.com/fmjstudios/gopskit/pkg/stamp"
@@ -33,6 +34,11 @@ type API struct {
 
 	// Log is a wrapper object around Uber's `zap` logger
 	Log *log.Logger
+
+	// KV is the embedded BadgerDB database wrapper which we us to persist
+	// Vault tokens, unseal keys and recovery keys, e.g. after Vault initialization.
+	// These values may or may not be made accessible via the CLIs via a subcommand.
+	KV *kv.Database
 
 	// Stamp is build-time information that is linked into the final executable
 	// by LD. Our Bazel builds stamps builds via LD using the 'x_defs' attribute

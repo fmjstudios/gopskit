@@ -190,6 +190,10 @@ func (d *Database) delete(key []byte) error {
 	return nil
 }
 
+// Close closes an active connection to a database. This method must be called
+// during program shutdown or else you risk corrupting the data. Additionally,
+// we run garbage collection across the entire database before finally shutting
+// down.
 func (d *Database) Close() error {
 	d.lock.Lock()
 	defer d.lock.Unlock()
@@ -201,6 +205,7 @@ func (d *Database) Close() error {
 	return d.kv.Close()
 }
 
+// Path returns the filesystem path to the database
 func (d *Database) Path() string {
 	d.lock.Lock()
 	defer d.lock.Unlock()
@@ -208,6 +213,7 @@ func (d *Database) Path() string {
 	return d.path
 }
 
+// Config returns the badger.Options the database was initialized with
 func (d *Database) Config() badger.Options {
 	d.lock.Lock()
 	defer d.lock.Unlock()

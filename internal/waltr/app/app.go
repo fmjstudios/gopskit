@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"github.com/fmjstudios/gopskit/pkg/core"
 	"github.com/fmjstudios/gopskit/pkg/fs"
+	"github.com/fmjstudios/gopskit/pkg/kv"
 	"github.com/fmjstudios/gopskit/pkg/log"
 	"github.com/fmjstudios/gopskit/pkg/proc"
 	"github.com/spf13/cobra"
+	"path/filepath"
 	"time"
 
 	"github.com/fmjstudios/gopskit/pkg/kube"
@@ -60,6 +62,13 @@ func New(opts ...Opt) (*State, error) {
 		return nil, fmt.Errorf("could not create kubernetes client: %v", err)
 	}
 
+	// embedded BadgerDB database
+	dbpath := filepath.Join(platf.Data, "data")
+	db, err := kv.New(dbpath)
+	if err != nil {
+		return nil, err
+	}
+
 	// enforce HTTPS
 	va := fmt.Sprintf("https://127.0.0.1:%s", kube.DefaultLocalPort)
 	vc, err := vault.New(vault.WithAddress(va), vault.WithRequestTimeout(60*time.Second), vault.WithTLS(vault.TLSConfiguration{
@@ -77,6 +86,7 @@ func New(opts ...Opt) (*State, error) {
 			Exec:  exec,
 			Kube:  kc,
 			Log:   lgr,
+			KV:    db,
 			Paths: platf,
 			Stamp: stamps,
 		},
