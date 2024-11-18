@@ -1,3 +1,15 @@
+## [1.0.1](https://github.com/fmjstudios/gopskit/compare/v1.0.0...v1.0.1) (2024-11-18)
+
+### Bug Fixes
+
+* **waltr:** fixed some issues causing goroutine deadlocks ([f5d521c](https://github.com/fmjstudios/gopskit/commit/f5d521c715bb094c495611f93cdc436f701accdc))
+
+### Performance Improvements
+
+* **proc:** rename `cmd` package to `proc` ([3f9aa65](https://github.com/fmjstudios/gopskit/commit/3f9aa653dadc87ee96ca17df3eebe81495a816b6))
+* **waltr:** update `waltr` commands to new `app` APIs ([9fc9025](https://github.com/fmjstudios/gopskit/commit/9fc90254ae35ec47f6f179a33a4d861ccc73a610))
+* **waltr:** update the central `app` package ([a59b2d5](https://github.com/fmjstudios/gopskit/commit/a59b2d52594311c0a1a0b69bee8cfd6a526629d7))
+
 ## 1.0.0 (2024-09-24)
 
 ### Features
