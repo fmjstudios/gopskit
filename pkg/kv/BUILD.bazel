@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "kv",
+    srcs = [
+        "kv.go",
+        "op.go",
+        "types.go",
+    ],
+    importpath = "github.com/fmjstudios/gopskit/pkg/kv",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/fs",
+        "//pkg/helpers",
+        "@com_github_dgraph_io_badger_v4//:badger",
+        "@org_golang_x_sync//errgroup",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":kv",
+    visibility = ["//visibility:public"],
+)

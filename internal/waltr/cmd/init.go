@@ -9,6 +9,8 @@ import (
 	"github.com/fmjstudios/gopskit/pkg/core"
 	"github.com/fmjstudios/gopskit/pkg/proc"
 	"github.com/fmjstudios/gopskit/pkg/tools"
+	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/vault-client-go/schema"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -72,6 +74,8 @@ func NewInitCommand() func(app *app.State) *cobra.Command {
 						}
 					}
 
+					// pod has to run first
+					cmdutil.WaitUntilRunning(app, p)
 					if err := cmdutil.DisableAshHistory(app, p); err != nil {
 						app.Log.Errorf("could not disable Ash Shell history for Pod: %s. Error: %v", p.Name, err)
 					}
@@ -97,13 +101,15 @@ func NewInitCommand() func(app *app.State) *cobra.Command {
 					// auto-unseal cannot be configured without this key
 					val, ok := cm.Data["extraconfig-from-values.hcl"]
 					if ok {
-						for _, v := range cmdutil.KnownUnsealTypes {
-							if strings.Contains(val, v) {
-								needsUnseal = false
-								highAvailability = true // must be true if auto-unseal is set
-							}
+						var cfg cmdutil.VaultConfig
+						hcp := hclparse.NewParser()
+						f, err := hcp.ParseHCL([]byte(val), "example.hcl")
+						err = gohcl.DecodeBody(f.Body, nil, &cfg)
+						if err != nil {
+							return fmt.Errorf("vault has invalid configuration. Error: %v", err)
 						}
 
+						needsUnseal = cfg.Seal == nil
 						if !needsUnseal {
 							app.Log.Info("found custom chart configuration enabling Auto-Unseal! skipping" +
 								" unseal steps")
@@ -190,6 +196,19 @@ func NewInitCommand() func(app *app.State) *cobra.Command {
 						}
 					} else {
 						app.Log.Info("secret-file unset. only writing Vault Token to cache path!")
+					}
+
+					// write to Database
+					err = app.KV.Set("token", []byte(data.Data.RootToken))
+					if err != nil {
+						defer cancel()
+						return err
+					}
+
+					err = app.KV.Set("unseal-keys", []byte(strings.Join(data.Data.Keys, ",")))
+					if err != nil {
+						defer cancel()
+						return err
 					}
 
 					// always write backup json file to cache path

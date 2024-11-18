@@ -86,6 +86,19 @@ func NewTestCommand() func(app *app.State) *cobra.Command {
 				}
 				app.Log.Info(fmt.Sprintf("https://%s:%d", svc.Spec.ClusterIP, svc.Spec.Ports[0].Port))
 
+				// DB test
+				token, err := app.KV.Get("token")
+				if err != nil {
+					return fmt.Errorf("could not retrieve token: %v", err)
+				}
+				fmt.Printf("Vault Root Token: %s\n", token)
+
+				unsealKeys, err := app.KV.Get("unseal-keys")
+				if err != nil {
+					return fmt.Errorf("could not retrieve unseal keys: %v", err)
+				}
+				fmt.Printf("Vault Unseal Keys: %s\n", unsealKeys)
+
 				return nil
 			},
 		}

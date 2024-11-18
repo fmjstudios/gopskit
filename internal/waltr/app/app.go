@@ -8,6 +8,7 @@ import (
 	"github.com/fmjstudios/gopskit/pkg/log"
 	"github.com/fmjstudios/gopskit/pkg/proc"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 	"path/filepath"
 	"time"
 
@@ -44,7 +45,7 @@ func New(opts ...Opt) (*State, error) {
 		return nil, err
 	}
 
-	lgr := log.New()
+	lgr := log.New(log.WithCustomConfig(zap.NewDevelopmentConfig()))
 	defer func() {
 		err = lgr.Sync()
 	}()
@@ -64,13 +65,14 @@ func New(opts ...Opt) (*State, error) {
 
 	// embedded BadgerDB database
 	dbpath := filepath.Join(platf.Data, "data")
+	fmt.Println("Creating BadgerDB database at:", dbpath)
 	db, err := kv.New(dbpath)
 	if err != nil {
 		return nil, err
 	}
 
 	// enforce HTTPS
-	va := fmt.Sprintf("https://127.0.0.1:%s", kube.DefaultLocalPort)
+	va := fmt.Sprintf("http://127.0.0.1:%s", kube.DefaultLocalPort)
 	vc, err := vault.New(vault.WithAddress(va), vault.WithRequestTimeout(60*time.Second), vault.WithTLS(vault.TLSConfiguration{
 		InsecureSkipVerify: true,
 	}))

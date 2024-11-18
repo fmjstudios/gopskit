@@ -113,9 +113,9 @@ func New(opts ...Option) *Logger {
 
 // WithCustomConfig overrides the entire DefaultConfig configuration, replacing the reference with a new zap.Config
 // object which will be used to configure the Logger
-func WithCustomConfig(cfg *zap.Config) Option {
+func WithCustomConfig(cfg zap.Config) Option {
 	return func(config *zap.Config) {
-		config = cfg
+		config = &cfg
 	}
 }
 

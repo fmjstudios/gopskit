@@ -42,6 +42,7 @@ func NewRootCommand(waltr *app.State) *cobra.Command {
 		CompletionOptions: cobra.CompletionOptions{
 			HiddenDefaultCmd: true,
 		},
+		SilenceUsage: true,
 	}
 
 	// Kubernetes Flags

@@ -198,7 +198,7 @@ func (d *Database) Close() error {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	doneC := make(chan struct{}, 1)
+	doneC := make(chan struct{})
 	go d.gc(doneC)
 	<-doneC
 

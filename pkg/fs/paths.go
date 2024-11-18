@@ -148,10 +148,12 @@ func Paths(opts ...Opt) (*PlatformPaths, error) {
 			wg.Done()
 		}()
 	}
+	wg.Wait() // wait for configuration to finish
 
 	g := new(errgroup.Group)
 	// async init
 	g.Go(func() error {
+		p.updateConfigPaths()
 		err := p.configure()
 		if err != nil {
 			return err
@@ -170,9 +172,6 @@ func Paths(opts ...Opt) (*PlatformPaths, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// wait for non-failable options
-	wg.Wait()
 
 	return p, nil
 }
@@ -235,7 +234,7 @@ func (p *PlatformPaths) configure() error {
 		return err
 	}
 
-	if p.AppName, err = p.determineDataDir(); err != nil {
+	if p.Data, err = p.determineDataDir(); err != nil {
 		return err
 	}
 
@@ -292,6 +291,15 @@ func (p *PlatformPaths) determineCacheDir() (string, error) {
 
 	path := filepath.Join(cache, p.AppName)
 	return path, nil
+}
+
+// updateConfigPaths ensures we use the updated names for the configuration paths,
+// whenever an Opt has updated the value post-initialization
+func (p *PlatformPaths) updateConfigPaths() {
+	p.ConfigPaths = []string{
+		fmt.Sprintf("/etc/%s/%s.%s", p.AppName, p.AppName, p.ConfigTypes[0]),
+		fmt.Sprintf("./%s.%s", p.AppName, p.ConfigTypes[0]),
+	}
 }
 
 // findConfigFile tries to find a configuration file within the specified ConfigPaths and

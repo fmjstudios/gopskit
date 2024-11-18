@@ -9,11 +9,13 @@ go_library(
         "//pkg/core",
         "//pkg/fs",
         "//pkg/kube",
+        "//pkg/kv",
         "//pkg/log",
         "//pkg/proc",
         "//pkg/stamp",
         "@com_github_hashicorp_vault_client_go//:vault-client-go",
         "@com_github_spf13_cobra//:cobra",
+        "@org_uber_go_zap//:zap",
     ],
 )
 

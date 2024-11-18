@@ -8,6 +8,7 @@ import (
 	"github.com/fmjstudios/gopskit/pkg/core"
 	"github.com/fmjstudios/gopskit/pkg/fs"
 	"github.com/fmjstudios/gopskit/pkg/helpers"
+	"github.com/hashicorp/hcl/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path/filepath"
@@ -15,10 +16,17 @@ import (
 	"time"
 )
 
-var (
-	KnownUnsealTypes = []string{"seal \"alicloudkms\"", "seal \"awskms\"", "seal \"azurekeyvault\"",
-		"seal \"gcpckms\"", "seal \"ocikms\"", "seal \"pkcs11\"", "seal \"transit\""}
-)
+type VaultConfig struct {
+	DisableMLock bool        `hcl:"disable_mlock"`
+	UI           bool        `hcl:"ui"`
+	Seal         *SealConfig `hcl:"seal,block"`
+	Remain       hcl.Body    `hcl:",remain"`
+}
+
+type SealConfig struct {
+	Type   string   `hcl:"type,label"`
+	Remain hcl.Body `hcl:",remain"`
+}
 
 // Credentials is a custom type which is used to write and load Vault credentials to and from a file
 type Credentials struct {

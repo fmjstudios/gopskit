@@ -24,6 +24,7 @@ go_library(
     deps = [
         "//pkg/fs",
         "//pkg/kube",
+        "//pkg/kv",
         "//pkg/log",
         "//pkg/proc",
         "//pkg/stamp",
