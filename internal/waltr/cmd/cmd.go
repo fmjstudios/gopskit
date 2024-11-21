@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/fmjstudios/gopskit/internal/waltr/app"
 	"github.com/spf13/cobra"
-	"sync"
 )
 
 var (
@@ -14,6 +15,7 @@ var (
 		NewMountsCommand,
 		NewConfigureCommand,
 		NewPrepareCommand,
+		NewTransitCommand,
 		NewTestCommand,
 	}
 
