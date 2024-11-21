@@ -1,3 +1,9 @@
+## [1.0.2](https://github.com/fmjstudios/gopskit/compare/v1.0.1...v1.0.2) (2024-11-21)
+
+### Bug Fixes
+
+* **waltr:** add missing `transit` command ([4a4e68b](https://github.com/fmjstudios/gopskit/commit/4a4e68bef58c09326650fb53c4482962f340f5bc))
+
 ## [1.0.1](https://github.com/fmjstudios/gopskit/compare/v1.0.0...v1.0.1) (2024-11-18)
 
 ### Bug Fixes
