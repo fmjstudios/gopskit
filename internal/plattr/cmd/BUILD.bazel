@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cmd",
+    srcs = [
+        "aws.go",
+        "cloudflare.go",
+        "cmd.go",
+        "generate.go",
+        "generate_dhparams.go",
+        "generate_passphrase.go",
+        "generate_smallstep.go",
+        "hetzner.go",
+        "longhorn.go",
+        "nginx.go",
+    ],
+    importpath = "github.com/fmjstudios/gopskit/internal/plattr/cmd",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/plattr/app",
+        "//pkg/helpers",
+        "//pkg/proc",
+        "//pkg/tools",
+        "@com_github_spf13_cobra//:cobra",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_api//storage/v1:storage",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cmd",
+    visibility = ["//:__subpackages__"],
+)
