@@ -5,6 +5,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -62,6 +63,15 @@ func (c *Client) ConfigMaps(namespace string, opts metav1.ListOptions) ([]corev1
 	return confL.Items, nil
 }
 
+func (c *Client) Secret(namespace string, name string, opts metav1.GetOptions) (*corev1.Secret, error) {
+	sec, err := c.Client.CoreV1().Secrets(namespace).Get(context.Background(), name, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return sec, nil
+}
+
 func (c *Client) Secrets(namespace string, opts metav1.ListOptions) ([]corev1.Secret, error) {
 	secL, err := c.Client.CoreV1().Secrets(namespace).List(context.Background(), opts)
 	if err != nil {
@@ -78,4 +88,13 @@ func (c *Client) Ingresses(namespace string, opts metav1.ListOptions) ([]network
 	}
 
 	return ingL.Items, nil
+}
+
+func (c *Client) StorageClass(name string, opts metav1.GetOptions) (*storagev1.StorageClass, error) {
+	storC, err := c.Client.StorageV1().StorageClasses().Get(context.Background(), name, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return storC, nil
 }

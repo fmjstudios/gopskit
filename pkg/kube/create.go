@@ -6,6 +6,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	storagev1 "k8s.io/api/storage/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,6 +49,15 @@ func (c *Client) CreateSecret(namespace string, secret *corev1.Secret, opts meta
 
 func (c *Client) CreateIngress(namespace string, ingress *networkingv1.Ingress, opts metav1.CreateOptions) error {
 	_, err := c.Client.NetworkingV1().Ingresses(namespace).Create(context.Background(), ingress, opts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) CreateStorageClass(storageClass *storagev1.StorageClass, opts metav1.CreateOptions) error {
+	_, err := c.Client.StorageV1().StorageClasses().Create(context.Background(), storageClass, opts)
 	if err != nil {
 		return err
 	}

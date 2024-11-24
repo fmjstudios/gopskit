@@ -23,7 +23,7 @@ func (c *Client) Apply(schema schema.GroupVersionResource, resource *unstructure
 
 	dc, err := dynamic.NewForConfig(c.Config)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	result, err = dc.Resource(schema).Get(context.Background(), opts.Name, *opts.GetOptions)

@@ -2,10 +2,11 @@ package kube
 
 import (
 	"errors"
-	"github.com/fmjstudios/gopskit/pkg/fs"
-	"github.com/fmjstudios/gopskit/pkg/proc"
 	"os"
 	"path/filepath"
+	"strings"
+
+	fs "github.com/fmjstudios/gopskit/pkg/fsi"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
@@ -16,13 +17,6 @@ import (
 const (
 	DefaultNamespace = "default"
 	DefaultLocalPort = "7150"
-)
-
-var (
-	searchPaths = []string{
-		filepath.Join(proc.Must(os.UserHomeDir()), ".kube", "config"),
-		filepath.Join(proc.Must(os.UserConfigDir()), "gopskit", "kubeconfig"),
-	}
 )
 
 type Client struct {
@@ -115,7 +109,20 @@ func WithNamespace(namespace string) func(c *Client) {
 // The function returns the first path which exists and (for now) does zero checking if we're actually looking at a
 // possibly valid file
 func findKubeConfig() (string, error) {
-	for _, path := range searchPaths {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	config, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+
+	paths := make([]string, 0)
+	paths = append(paths, filepath.Join(home, ".kube", "config"), filepath.Join(config, "gopskit", "kubeconfig"))
+
+	for _, path := range paths {
 		exists := fs.CheckIfExists(path)
 		if exists {
 			return path, nil
@@ -124,5 +131,5 @@ func findKubeConfig() (string, error) {
 		}
 	}
 
-	return "", errors.New("could not find kubeconfig at either of the search paths: 1. " + searchPaths[0] + ". 2." + searchPaths[1])
+	return "", errors.New("couldn't find Kubeconfig file at known paths: [" + strings.Join(paths, ", ") + "]")
 }
