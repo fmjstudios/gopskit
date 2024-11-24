@@ -3,19 +3,21 @@ package log
 import (
 	"context"
 	"fmt"
+	"os"
+	"sync"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
-	"os"
-	"sync"
-	"time"
 )
 
 var (
+	Global *Logger
+
 	// DefaultConfig is the default configuration used for the zap-based Logger
-	DefaultConfig = &zap.Config{
+	DefaultConfig = zap.Config{
 		Level:             zap.NewAtomicLevelAt(zap.InfoLevel),
-		Development:       false,
+		Development:       true,
 		DisableCaller:     false,
 		DisableStacktrace: false,
 		Sampling:          nil,
@@ -24,17 +26,24 @@ var (
 			MessageKey:  "msg",
 			LevelKey:    "lvl",
 			EncodeLevel: zapcore.CapitalColorLevelEncoder,
+			EncodeTime:  zapcore.RFC3339TimeEncoder,
+			TimeKey:     "time",
 		},
 		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: nil,
-		InitialFields: map[string]interface{}{
-			"date": time.Now().Format(time.RFC3339),
-		},
+		ErrorOutputPaths: []string{"stderr"},
+		// InitialFields: map[string]interface{}{
+		// 	"date": time.Now().Format(time.RFC3339),
+		// },
 	}
 )
 
+// create a Global logger instance for use within packages
+func init() {
+	Global = New()
+}
+
 // Option is a utility function which is called during Logger initialization to alter or even override the DefaultConfig
-type Option func(config *zap.Config)
+type Option func(logger *Logger)
 
 // Logger is a type alias to Uber's zap logger, saving us from importing zap everywhere
 // and assuming the SugaredLogger's API results low effort logs later
@@ -55,7 +64,7 @@ type Logger struct {
 
 // Config builds a new zap.Config with optional Options for configuration
 func Config(opts ...zap.Option) *zap.Config {
-	c := zap.NewProductionConfig()
+	c := DefaultConfig
 	g := new(errgroup.Group)
 
 	// assert that it builds
@@ -89,7 +98,7 @@ func New(opts ...Option) *Logger {
 	errg, _ := errgroup.WithContext(context.Background())
 	for _, opt := range opts {
 		errg.Go(func() error {
-			opt(l.conf)
+			opt(l)
 			return nil
 		})
 	}
@@ -114,28 +123,28 @@ func New(opts ...Option) *Logger {
 // WithCustomConfig overrides the entire DefaultConfig configuration, replacing the reference with a new zap.Config
 // object which will be used to configure the Logger
 func WithCustomConfig(cfg zap.Config) Option {
-	return func(config *zap.Config) {
-		config = &cfg
+	return func(logger *Logger) {
+		logger.conf = &cfg
 	}
 }
 
 // WithLevel configures the Logger with a custom logging level
 func WithLevel(level zapcore.Level) Option {
-	return func(config *zap.Config) {
-		config.Level = zap.NewAtomicLevelAt(level)
+	return func(logger *Logger) {
+		logger.conf.Level = zap.NewAtomicLevelAt(level)
 	}
 }
 
 // WithEncoder configures a custom Encoder for the new Logger
 func WithEncoder(encoder zapcore.EncoderConfig) Option {
-	return func(config *zap.Config) {
-		config.EncoderConfig = encoder
+	return func(logger *Logger) {
+		logger.conf.EncoderConfig = encoder
 	}
 }
 
 // WithDevelopment configures the new Logger for use within development contexts
 func WithDevelopment() Option {
-	return func(config *zap.Config) {
-		config.Development = true
+	return func(logger *Logger) {
+		logger.conf.Development = true
 	}
 }
