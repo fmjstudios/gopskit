@@ -7,7 +7,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//pkg/core",
-        "//pkg/fs",
+        "//pkg/fsi",
         "//pkg/kube",
         "//pkg/log",
         "//pkg/proc",

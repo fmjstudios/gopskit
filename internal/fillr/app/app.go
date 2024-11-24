@@ -2,8 +2,9 @@ package app
 
 import (
 	"fmt"
+
 	"github.com/fmjstudios/gopskit/pkg/core"
-	"github.com/fmjstudios/gopskit/pkg/fs"
+	fs "github.com/fmjstudios/gopskit/pkg/fsi"
 	"github.com/fmjstudios/gopskit/pkg/kube"
 	"github.com/fmjstudios/gopskit/pkg/log"
 	"github.com/fmjstudios/gopskit/pkg/proc"

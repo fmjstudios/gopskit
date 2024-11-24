@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"sync"
+
 	"github.com/fmjstudios/gopskit/internal/fillr/app"
-	"github.com/fmjstudios/gopskit/pkg/fs"
+	fs "github.com/fmjstudios/gopskit/pkg/fsi"
 	"github.com/fmjstudios/gopskit/pkg/helpers"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
-	"os"
-	"sync"
 )
 
 var (
@@ -54,6 +55,10 @@ fillr my-values.yaml -t "{{ index .Values \"kubescape-operator\" \"chartValues\"
 			HiddenDefaultCmd: true,
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				cmd.Usage()
+			}
+
 			path := args[0]
 			values := make(map[string]interface{})
 			out := make(map[string]interface{})
