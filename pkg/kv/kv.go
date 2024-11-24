@@ -6,10 +6,11 @@ package kv
 import (
 	"context"
 	"fmt"
-	"github.com/dgraph-io/badger/v4"
-	"github.com/fmjstudios/gopskit/pkg/fs"
 	"os"
 	"sync"
+
+	"github.com/dgraph-io/badger/v4"
+	fs "github.com/fmjstudios/gopskit/pkg/fsi"
 )
 
 // New instantiates a new key-value store and configures it with the given Opt

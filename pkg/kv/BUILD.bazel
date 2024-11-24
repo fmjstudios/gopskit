@@ -10,7 +10,7 @@ go_library(
     importpath = "github.com/fmjstudios/gopskit/pkg/kv",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/fs",
+        "//pkg/fsi",
         "//pkg/helpers",
         "@com_github_dgraph_io_badger_v4//:badger",
         "@org_golang_x_sync//errgroup",
