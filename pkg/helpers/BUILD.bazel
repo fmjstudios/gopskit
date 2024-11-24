@@ -12,7 +12,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/proc",
-        "@org_golang_x_sync//errgroup",
+        "@com_github_luzifer_go_dhparam//:go-dhparam",
     ],
 )
 

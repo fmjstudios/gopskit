@@ -1,14 +1,20 @@
 package helpers
 
 import (
-	"bytes"
 	"context"
 	b64 "encoding/base64"
 	"fmt"
-	"github.com/fmjstudios/gopskit/pkg/proc"
-	"golang.org/x/sync/errgroup"
 	"math/rand/v2"
-	"os/exec"
+	"strings"
+
+	"github.com/Luzifer/go-dhparam"
+	"github.com/fmjstudios/gopskit/pkg/proc"
+)
+
+const (
+	PassphraseDefaultCharset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+	PassphraseDefaultLength  = 48
+	DHParamDefaultBits       = 4096
 )
 
 type PassphraseConfig struct {
@@ -18,24 +24,23 @@ type PassphraseConfig struct {
 
 type PassphraseOpt func(conf *PassphraseConfig)
 
-func WithLength(length int) func(conf *PassphraseConfig) {
+func WithLength(length int) PassphraseOpt {
 	return func(cfg *PassphraseConfig) {
 		cfg.Length = length
 	}
 }
 
-func WithCharSet(charset string) func(conf *PassphraseConfig) {
+func WithCharSet(charset string) PassphraseOpt {
 	return func(cfg *PassphraseConfig) {
 		cfg.CharSet = charset
 	}
 }
 
 func GeneratePassphrase(opts ...PassphraseOpt) string {
-	var pass string
-
+	var sb strings.Builder
 	cfg := &PassphraseConfig{
-		Length:  48,
-		CharSet: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+		Length:  PassphraseDefaultLength,
+		CharSet: PassphraseDefaultCharset,
 	}
 
 	// configure
@@ -43,11 +48,11 @@ func GeneratePassphrase(opts ...PassphraseOpt) string {
 		o(cfg)
 	}
 
-	for i := 1; i < cfg.Length; i++ {
-		pass += string(cfg.CharSet[rand.IntN(len(cfg.CharSet))])
+	for i := 0; i < cfg.Length; i++ {
+		sb.WriteByte(cfg.CharSet[rand.IntN(len(cfg.CharSet))])
 	}
 
-	return pass
+	return sb.String()
 }
 
 type Encoding int
@@ -64,69 +69,57 @@ type DiffieHellmanConfig struct {
 
 type DiffieHellmanOpt func(cfg *DiffieHellmanConfig)
 
-func WithBits(bits int) func(cfg *DiffieHellmanConfig) {
+func WithBits(bits int) DiffieHellmanOpt {
 	return func(cfg *DiffieHellmanConfig) {
 		cfg.Bits = bits
 	}
 }
 
-func WithEncoding(encoding Encoding) func(cfg *DiffieHellmanConfig) {
+func WithEncoding(encoding Encoding) DiffieHellmanOpt {
 	return func(cfg *DiffieHellmanConfig) {
 		cfg.Encoding = encoding
 	}
 }
 
-func GenerateDiffieHellmanParams(opts ...DiffieHellmanOpt) (string, error) {
-	var params string
-	errg, _ := errgroup.WithContext(context.Background())
-
-	// sanity
-	_, err := exec.LookPath("openssl")
-	if err != nil {
-		return "", fmt.Errorf("openssl is not installed on the system")
-	}
-
-	cfg := &DiffieHellmanConfig{
-		Bits:     4096,
+func DefaultDiffieHellmanConfig() *DiffieHellmanConfig {
+	return &DiffieHellmanConfig{
+		Bits:     DHParamDefaultBits,
 		Encoding: Raw,
 	}
+}
 
+func GenerateDiffieHellmanParams(opts ...DiffieHellmanOpt) (string, error) {
+	// var params string
+	cfg := DefaultDiffieHellmanConfig()
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// (re-)configure
 	for _, o := range opts {
 		o(cfg)
 	}
 
-	args := []string{"openssl", "dhparam", fmt.Sprintf("%d", cfg.Bits)}
-	var bufStdO, bufStdE bytes.Buffer
+	// allow CTRL+C
+	go proc.WaitForCancel(proc.CleanupFunc(func() int {
+		cancel()
+		return 0
+	}))
 
-	e, err := proc.NewExecutor(proc.WithInheritedEnv())
+	raw, err := dhparam.GenerateWithContext(ctx, cfg.Bits, dhparam.GeneratorTwo, nil)
 	if err != nil {
 		return "", err
 	}
 
-	errg.Go(func() error {
-		_, err := e.Execute(args, proc.WithWriters(bufStdO, bufStdE))
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	if err := errg.Wait(); err != nil {
-		return "", proc.ExecuteError{
-			ExitCode: e.ProcessState.ExitCode(),
-			Err:      err,
-		}
+	params, err := raw.ToPEM()
+	if err != nil {
+		return "", err
 	}
 
 	switch cfg.Encoding {
 	case Base64:
-		params = b64.StdEncoding.EncodeToString(bufStdO.Bytes())
+		return b64.StdEncoding.EncodeToString(params), nil
 	case Raw:
-		params = bufStdO.String()
+		return string(params), nil
 	default:
 		return "", fmt.Errorf("invalid DiffieHellman encoding: %v", cfg.Encoding)
 	}
-
-	return params, nil
 }
