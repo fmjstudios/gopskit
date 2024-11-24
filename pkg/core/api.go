@@ -1,9 +1,8 @@
 package core
 
 import (
-	"github.com/fmjstudios/gopskit/pkg/fs"
+	fs "github.com/fmjstudios/gopskit/pkg/fsi"
 	"github.com/fmjstudios/gopskit/pkg/kube"
-	"github.com/fmjstudios/gopskit/pkg/kv"
 	"github.com/fmjstudios/gopskit/pkg/log"
 	"github.com/fmjstudios/gopskit/pkg/proc"
 	"github.com/fmjstudios/gopskit/pkg/stamp"
@@ -15,10 +14,6 @@ import (
 type API struct {
 	// Name is the name of the application this object is instanced for
 	Name string
-
-	// CLI is the root command for the cobra command-set. This will be
-	// executed to start the command-line application
-	// CLI *cobra.Command
 
 	// Exec represents a command-line executor to quickly new start processes
 	// and closely evaluate their output as well as potential errors
@@ -38,7 +33,7 @@ type API struct {
 	// KV is the embedded BadgerDB database wrapper which we us to persist
 	// Vault tokens, unseal keys and recovery keys, e.g. after Vault initialization.
 	// These values may or may not be made accessible via the CLIs via a subcommand.
-	KV *kv.Database
+	// KV *kv.Database
 
 	// Stamp is build-time information that is linked into the final executable
 	// by LD. Our Bazel builds stamps builds via LD using the 'x_defs' attribute

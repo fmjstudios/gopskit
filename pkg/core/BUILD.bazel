@@ -22,9 +22,8 @@ go_library(
     importpath = "github.com/fmjstudios/gopskit/pkg/core",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/fs",
+        "//pkg/fsi",
         "//pkg/kube",
-        "//pkg/kv",
         "//pkg/log",
         "//pkg/proc",
         "//pkg/stamp",
