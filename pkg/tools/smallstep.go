@@ -3,12 +3,21 @@ package tools
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/fmjstudios/gopskit/pkg/fs"
+	"os"
+	"path/filepath"
+
+	fs "github.com/fmjstudios/gopskit/pkg/fsi"
 	"github.com/fmjstudios/gopskit/pkg/helpers"
 	"github.com/fmjstudios/gopskit/pkg/proc"
 	"gopkg.in/yaml.v3"
-	"os"
-	"path/filepath"
+)
+
+const (
+	SmallstepDefaultName           = "FMJ Studios Private Certificate Authority"
+	SmallstepDefaultHostname       = "ca.fmj.studio"
+	SmallstepDefaultAddress        = "0.0.0.0:443"
+	SmallstepDefaultProvisioner    = "info@fmj.studio"
+	SmallstepDefaultDeploymentType = "standalone"
 )
 
 type StepValuesOpt func(cfg *StepValuesConfig)
@@ -19,6 +28,7 @@ type StepValuesConfig struct {
 	Address        string
 	Provisioner    string
 	DeploymentType string
+	Passphrase     string
 }
 
 func WithName(name string) func(cfg *StepValuesConfig) {
@@ -51,20 +61,27 @@ func WithDeploymentType(deploymentType string) func(cfg *StepValuesConfig) {
 	}
 }
 
-func GenerateStepValues(opts ...StepValuesOpt) (*StepHelmValues, error) {
+func WithPassphrase(passphrase string) func(cfg *StepValuesConfig) {
+	return func(cfg *StepValuesConfig) {
+		cfg.Passphrase = passphrase
+	}
+}
+
+func GenerateStepValues(opts ...StepValuesOpt) (*StepHelmValues, string, error) {
 	// sanity
 	_, err := proc.LookPath("step")
 	if err != nil {
-		return nil, fmt.Errorf("step CLI is not installed or available in PATH. cannot continue")
+		return nil, "", fmt.Errorf("step CLI is not installed or available in PATH. cannot continue")
 	}
 
 	// init
 	cfg := &StepValuesConfig{
-		Name:           "FMJ Studios Internal CA",
-		Hostname:       "ca.fmj.studio",
-		Address:        "0.0.0.0:443",
-		Provisioner:    "info@fmj.dev",
-		DeploymentType: "standalone",
+		Name:           SmallstepDefaultName,
+		Hostname:       SmallstepDefaultHostname,
+		Address:        SmallstepDefaultAddress,
+		Provisioner:    SmallstepDefaultProvisioner,
+		DeploymentType: SmallstepDefaultDeploymentType,
+		Passphrase:     "",
 	}
 
 	// configure
@@ -72,17 +89,19 @@ func GenerateStepValues(opts ...StepValuesOpt) (*StepHelmValues, error) {
 		o(cfg)
 	}
 
-	pw := helpers.GeneratePassphrase(helpers.WithLength(64))
-	pwB64 := base64.StdEncoding.EncodeToString([]byte(pw))
+	if cfg.Passphrase == "" {
+		cfg.Passphrase = helpers.GeneratePassphrase(helpers.WithLength(64))
+	}
+	pwB64 := base64.StdEncoding.EncodeToString([]byte(cfg.Passphrase))
 
 	tmp, err := fs.TempDir("step")
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	pwPath := filepath.Join(tmp, "step-ca-password.txt")
 	if err := fs.Write(pwPath, []byte(pwB64)); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	valPath := filepath.Join(tmp, "step-values.yaml")
@@ -106,25 +125,25 @@ func GenerateStepValues(opts ...StepValuesOpt) (*StepHelmValues, error) {
 	}
 	e, err := proc.NewExecutor()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	_, err = e.Execute(args, proc.WithOutputs(valPath))
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	var data = &StepHelmValues{}
 	content, err := os.ReadFile(valPath)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	if err := yaml.Unmarshal(content, &data); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return data, nil
+	return data, cfg.Passphrase, nil
 }
 
 // StepHelmValues is the Go struct representation of the Smallstep (CLI)'s YAML

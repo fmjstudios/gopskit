@@ -2,14 +2,15 @@ package tools
 
 import (
 	"fmt"
-	"github.com/fmjstudios/gopskit/pkg/fs"
+	"os"
+
+	fs "github.com/fmjstudios/gopskit/pkg/fsi"
 	"github.com/fmjstudios/gopskit/pkg/helpers"
 	"github.com/fmjstudios/gopskit/pkg/proc"
 	"github.com/go-resty/resty/v2"
 	"github.com/vmware-labs/yaml-jsonpath/pkg/yamlpath"
 	"golang.org/x/mod/semver"
 	"gopkg.in/yaml.v3"
-	"os"
 )
 
 // HelmPlugin represents a Helm plugin required for gopskit to work
@@ -247,9 +248,16 @@ func EncryptFile(path string) error {
 		return fmt.Errorf("cannot encrypt non-existing file: %s", path)
 	}
 
-	_, err = e.Execute([]string{"helm", secrets.String(), "encrypt", "-i", path})
+	state, err := GetFileState(path)
 	if err != nil {
 		return err
+	}
+
+	if state == decrypted {
+		_, err = e.Execute([]string{"helm", secrets.String(), "encrypt", "-i", path})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -266,9 +274,16 @@ func DecryptFile(path string) error {
 		return fmt.Errorf("cannot decrypt non-existing file: %s", path)
 	}
 
-	_, err = e.Execute([]string{"helm", secrets.String(), "decrypt", "-i", path})
+	state, err := GetFileState(path)
 	if err != nil {
 		return err
+	}
+
+	if state == encrypted {
+		_, err = e.Execute([]string{"helm", secrets.String(), "decrypt", "-i", path})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
