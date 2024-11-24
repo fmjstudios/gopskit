@@ -2,7 +2,12 @@ package proc
 
 import (
 	stderrs "errors"
+	"os"
 	"os/exec"
+	"os/signal"
+	"syscall"
+
+	"github.com/fmjstudios/gopskit/pkg/log"
 )
 
 // Must ensures the return values of a function are not errors therefore negating
@@ -26,4 +31,17 @@ func LookPath(path string) (string, error) {
 	}
 
 	return path, err
+}
+
+type CleanupFunc func() int
+
+func WaitForCancel(cleanup CleanupFunc) {
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	// block until a signal is received
+	<-c
+	log.Global.Info("CTRL+C received. Cancelling current operation...")
+	code := cleanup()
+	os.Exit(code)
 }

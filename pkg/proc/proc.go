@@ -5,11 +5,9 @@ package proc
 import (
 	"bytes"
 	"context"
-	"golang.org/x/sync/errgroup"
 	"io"
 	"os"
 	"os/exec"
-	"sync"
 )
 
 // Opt is a configuration option for the initialization of new Executor's
@@ -41,7 +39,7 @@ type Executor struct {
 	outputs []string
 
 	// lock is a Mutex which ensures that only one goroutine may modify the configuration
-	lock sync.Mutex
+	// lock sync.Mutex
 
 	// exec.Cmd is the embedded Go-native Command to execute
 	*exec.Cmd
@@ -52,25 +50,11 @@ type Executor struct {
 // Executor. These Options allow Execute to do things like write files,
 // byte-buffers and e.g. inherit the host's environment configuration.
 func NewExecutor(opts ...Opt) (*Executor, error) {
-	e := &Executor{
-		inheritEnv: false,
-		lock:       sync.Mutex{},
-	}
-
-	e.lock.Lock()
-	defer e.lock.Unlock()
+	e := DefaultExecutor()
 
 	// (re)-configure
-	g := new(errgroup.Group)
 	for _, o := range opts {
-		g.Go(func() error {
-			err := o(e)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		})
+		o(e)
 	}
 
 	return e, nil
@@ -88,9 +72,6 @@ func DefaultExecutor() *Executor {
 // settings into the command to be executed
 func WithInheritedEnv() Opt {
 	return func(e *Executor) error {
-		e.lock.Lock()
-		defer e.lock.Unlock()
-
 		e.inheritEnv = true
 		return nil
 	}
@@ -101,9 +82,6 @@ func WithInheritedEnv() Opt {
 // each of those descriptors
 func WithMultiWriters(writers ...bytes.Buffer) ExecuteOpt {
 	return func(e *Executor) {
-		e.lock.Lock()
-		defer e.lock.Unlock()
-
 		e.writers = append(e.writers, io.MultiWriter(os.Stdout, &writers[0]))
 		e.writers = append(e.writers, io.MultiWriter(os.Stderr, &writers[1]))
 	}
@@ -113,9 +91,6 @@ func WithMultiWriters(writers ...bytes.Buffer) ExecuteOpt {
 // a slice of byte-buffers with date from the StdOut and StdErr output respectively.
 func WithWriters(writers ...bytes.Buffer) ExecuteOpt {
 	return func(e *Executor) {
-		e.lock.Lock()
-		defer e.lock.Unlock()
-
 		var bufStdO, bufStdE bytes.Buffer
 		e.writers = append(e.writers, &bufStdO, &bufStdE)
 	}
@@ -125,12 +100,7 @@ func WithWriters(writers ...bytes.Buffer) ExecuteOpt {
 // the standard output of the command to a file on the filesystem
 func WithOutputs(paths ...string) ExecuteOpt {
 	return func(e *Executor) {
-		e.lock.Lock()
-		defer e.lock.Unlock()
-
-		for _, v := range paths {
-			e.outputs = append(e.outputs, v)
-		}
+		e.outputs = paths
 	}
 }
 
@@ -140,14 +110,9 @@ func WithOutputs(paths ...string) ExecuteOpt {
 // These Options allow Execute to do things like write files, byte-buffers and e.g. inherit the
 // host's environment configuration.
 func (e *Executor) Execute(args []string, opts ...ExecuteOpt) ([]string, error) {
-	var wg sync.WaitGroup
-	e.lock.Lock()
-	defer e.lock.Unlock()
-
 	ctx, ctxCancel := context.WithCancel(context.TODO())
 	defer ctxCancel()
 
-	g := new(errgroup.Group)
 	//args := strings.Fields(command)
 	e.Cmd = exec.CommandContext(ctx, args[0], args[1:]...)
 
@@ -163,14 +128,9 @@ func (e *Executor) Execute(args []string, opts ...ExecuteOpt) ([]string, error) 
 	}
 
 	// (re)-configure
-	wg.Add(len(opts))
 	for _, o := range opts {
-		go func() {
-			o(e)
-			wg.Done()
-		}()
+		o(e)
 	}
-	wg.Wait() // config must be done before we do anything
 
 	// create pipes
 	readers := []io.ReadCloser{Must(e.StdoutPipe()), Must(e.StderrPipe())}
@@ -181,60 +141,43 @@ func (e *Executor) Execute(args []string, opts ...ExecuteOpt) ([]string, error) 
 		return nil, err
 	}
 
-	// copy command output to generic io.Writers
+	// copy command output to generic io.Writers (if set)
 	for i, wr := range e.writers {
-		g.Go(func() error {
-			if _, err := copyBytes(readers[i], wr); err != nil {
-				return err
-			}
-
-			return nil
-		})
+		if _, err := copyBytes(readers[i], wr); err != nil {
+			return nil, err
+		}
 	}
 
 	// write output to files (if set)
 	for _, out := range e.outputs {
-		g.Go(func() error {
-			var buf bytes.Buffer
-			if _, err := copyBytes(readers[0], &buf); err != nil {
-				return err
-			}
+		var buf bytes.Buffer
+		if _, err := copyBytes(readers[0], &buf); err != nil {
+			return nil, err
+		}
 
-			if err := os.WriteFile(out, buf.Bytes(), 0644); err != nil {
-				return err
-			}
-
-			return nil
-		})
+		if err := os.WriteFile(out, buf.Bytes(), 0644); err != nil {
+			return nil, err
+		}
 	}
 
-	var bufs []bytes.Buffer
-	g.Go(func() error {
-		// wait for command to finish
-		err := e.Wait()
-		if err != nil {
-			return err
+	var output = make([]string, 2)
+	// we only need stdout and stderr
+	for i := 0; i <= 1; i++ {
+		var buf bytes.Buffer
+		if _, err := copyBytes(readers[i], &buf); err != nil {
+			return nil, err
 		}
 
-		// we only need stdout and stderr
-		for i := 0; i <= 1; i++ {
-			if _, err := copyBytes(readers[i], &bufs[i]); err != nil {
-				return err
-			}
-		}
+		output[i] = buf.String()
+	}
 
-		return nil
-	})
-
-	err = g.Wait()
+	// wait for command to finish
+	err = e.Wait()
 	if err != nil {
 		return nil, ExecuteError{ExitCode: e.ProcessState.ExitCode(), Err: err}
 	}
 
-	return []string{
-		bufs[0].String(),
-		bufs[1].String(),
-	}, nil
+	return output, nil
 }
 
 // configure configures the Executor
