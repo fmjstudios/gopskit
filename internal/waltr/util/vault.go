@@ -4,16 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/fmjstudios/gopskit/internal/waltr/app"
 	"github.com/fmjstudios/gopskit/pkg/core"
-	"github.com/fmjstudios/gopskit/pkg/fs"
+	fs "github.com/fmjstudios/gopskit/pkg/fsi"
 	"github.com/fmjstudios/gopskit/pkg/helpers"
 	"github.com/hashicorp/hcl/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 type VaultConfig struct {
@@ -166,7 +167,7 @@ func Pods(a *app.State, namespace, label string) ([]corev1.Pod, error) {
 	pods, err := a.Kube.Pods(namespace, metav1.ListOptions{
 		LabelSelector: label,
 	})
-	a.Log.Debug("found %d pods for label: %s", len(pods), label)
+	a.Log.Debugf("found %d pods for label: %s", len(pods), label)
 
 	if err != nil {
 		return nil, err

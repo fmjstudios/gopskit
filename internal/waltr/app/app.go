@@ -2,15 +2,13 @@ package app
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/fmjstudios/gopskit/pkg/core"
-	"github.com/fmjstudios/gopskit/pkg/fs"
-	"github.com/fmjstudios/gopskit/pkg/kv"
+	fs "github.com/fmjstudios/gopskit/pkg/fsi"
 	"github.com/fmjstudios/gopskit/pkg/log"
 	"github.com/fmjstudios/gopskit/pkg/proc"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
-	"path/filepath"
-	"time"
 
 	"github.com/fmjstudios/gopskit/pkg/kube"
 	"github.com/fmjstudios/gopskit/pkg/stamp"
@@ -25,7 +23,7 @@ const (
 // Opt is configuration option for the application State
 type Opt func(a *State)
 
-type CLIOpt func() func(a *State) *cobra.Command
+type CLIOpt func(a *State) *cobra.Command
 
 // State is the implementation for the `waltr` command-line application state
 type State struct {
@@ -45,7 +43,7 @@ func New(opts ...Opt) (*State, error) {
 		return nil, err
 	}
 
-	lgr := log.New(log.WithCustomConfig(zap.NewDevelopmentConfig()))
+	lgr := log.New()
 	defer func() {
 		err = lgr.Sync()
 	}()
@@ -64,15 +62,15 @@ func New(opts ...Opt) (*State, error) {
 	}
 
 	// embedded BadgerDB database
-	dbpath := filepath.Join(platf.Data, "data")
-	fmt.Println("Creating BadgerDB database at:", dbpath)
-	db, err := kv.New(dbpath)
-	if err != nil {
-		return nil, err
-	}
+	// dbpath := filepath.Join(platf.Data, "data")
+	// fmt.Println("Creating BadgerDB database at:", dbpath)
+	// db, err := kv.New(dbpath)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	// enforce HTTPS
-	va := fmt.Sprintf("http://127.0.0.1:%s", kube.DefaultLocalPort)
+	va := fmt.Sprintf("https://127.0.0.1:%s", kube.DefaultLocalPort)
 	vc, err := vault.New(vault.WithAddress(va), vault.WithRequestTimeout(60*time.Second), vault.WithTLS(vault.TLSConfiguration{
 		InsecureSkipVerify: true,
 	}))
@@ -84,11 +82,11 @@ func New(opts ...Opt) (*State, error) {
 
 	a := &State{
 		API: &core.API{
-			Name:  Name,
-			Exec:  exec,
-			Kube:  kc,
-			Log:   lgr,
-			KV:    db,
+			Name: Name,
+			Exec: exec,
+			Kube: kc,
+			Log:  lgr,
+			// KV:    db,
 			Paths: platf,
 			Stamp: stamps,
 		},

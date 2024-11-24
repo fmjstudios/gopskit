@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/fmjstudios/gopskit/internal/waltr/app"
 	"github.com/spf13/cobra"
@@ -39,6 +38,10 @@ func NewRootCommand(waltr *app.State) *cobra.Command {
 		TraverseChildren: true,
 		SilenceErrors:    true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				cmd.Usage()
+			}
+
 			return nil
 		},
 		CompletionOptions: cobra.CompletionOptions{
@@ -57,15 +60,9 @@ func NewRootCommand(waltr *app.State) *cobra.Command {
 		"The Kubernetes namespace to use. None equates to checking the entire cluster.")
 
 	// add subcommands
-	var wg sync.WaitGroup
-	wg.Add(len(Commands))
 	for _, opt := range Commands {
-		go func() {
-			cmd.AddCommand(opt()(waltr))
-			wg.Done()
-		}()
+		cmd.AddCommand(opt(waltr))
 	}
-	wg.Wait()
 
 	return cmd
 }

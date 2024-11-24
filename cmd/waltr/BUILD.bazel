@@ -16,7 +16,6 @@ go_library(
     deps = [
         "//internal/waltr/app",
         "//internal/waltr/cmd",
-        "//pkg/kv",
         "//pkg/stamp",
     ],
 )
