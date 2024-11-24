@@ -11,17 +11,17 @@
 
 ## ✏️ Planned Changes
 
-- [X] merge `platform` and `filesystem` packages into `fs`
+- [x] merge `platform` and `filesystem` packages into `fs`
 - [ ] implement better logging format
-- [X] remove obsolete `errors` package
-- [X] merge `env` and `common` packages
-- [X] make current code asynchronous
-- [X] do generel code-cleanup
-- [X] remove non-implemented code besides one-liners in `main.go`
-- [X] rename `util` to `helpers` for consistency
-- [X] rename `cmd` to `proc` for consistency
-- [X] shorten field names in `core.App`
-- [X] rename `logger` to just `log`
+- [x] remove obsolete `errors` package
+- [x] merge `env` and `common` packages
+- [x] make current code asynchronous
+- [x] do generel code-cleanup
+- [x] remove non-implemented code besides one-liners in `main.go`
+- [x] rename `util` to `helpers` for consistency
+- [x] rename `cmd` to `proc` for consistency
+- [x] shorten field names in `core.App`
+- [x] rename `logger` to just `log`
 
 ## 💡 Ideas
 
