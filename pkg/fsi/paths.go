@@ -1,15 +1,15 @@
 package fs
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"github.com/fmjstudios/gopskit/pkg/helpers"
-	"golang.org/x/sync/errgroup"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
+
+	"github.com/fmjstudios/gopskit/pkg/helpers"
+	"golang.org/x/sync/errgroup"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -159,7 +159,7 @@ func Paths(opts ...Opt) (*PlatformPaths, error) {
 			return err
 		}
 
-		err = p.findConfigFile(context.Background())
+		err = p.findConfigFile()
 		if err != nil {
 			return err
 		}
@@ -296,37 +296,35 @@ func (p *PlatformPaths) determineCacheDir() (string, error) {
 // updateConfigPaths ensures we use the updated names for the configuration paths,
 // whenever an Opt has updated the value post-initialization
 func (p *PlatformPaths) updateConfigPaths() {
-	p.ConfigPaths = []string{
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	curPaths := p.ConfigPaths
+	new := helpers.RemoveDuplicates(append(curPaths, []string{
 		fmt.Sprintf("/etc/%s/%s.%s", p.AppName, p.AppName, p.ConfigTypes[0]),
 		fmt.Sprintf("./%s.%s", p.AppName, p.ConfigTypes[0]),
-	}
+	}...))
+
+	p.ConfigPaths = new
 }
 
 // findConfigFile tries to find a configuration file within the specified ConfigPaths and
 // marks the file as existing within the Exists map, if found.
-func (p *PlatformPaths) findConfigFile(ctx context.Context) error {
+func (p *PlatformPaths) findConfigFile() error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
-	g := new(errgroup.Group)
 	for _, path := range p.ConfigPaths {
-		g.Go(func() error {
-			if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-				p.Exists[path] = false
-				return nil
-			} else if err != nil {
-				p.Exists[path] = false
-				return fmt.Errorf("could not stat configuration file: %s. Error: %v", path, err)
-			}
+		_, err := os.Stat(path)
+		if errors.Is(err, os.ErrNotExist) {
+			p.Exists[path] = false
+		} else if err != nil {
+			p.Exists[path] = false
+			return fmt.Errorf("could not stat configuration file: %s. Error: %v", path, err)
+		}
 
-			p.Exists[path] = true
-			return nil
-		})
+		p.Exists[path] = true
 	}
 
-	return g.Wait()
+	return nil
 }

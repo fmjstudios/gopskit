@@ -1,4 +1,4 @@
-// Package fs implements filesystem utilities as well as a Paths Object which holds references, to
+// Package fsi implements a filesystem interface as well as a Paths object which holds references, to
 // important directories like the platform-specific logging for configuration directories. These
 // paths are either built for the generic 'gopskit' application name (to ensure our files don't
 // crowd global OS directories) or for custom names, which is configurable with Opt arguments for NewPaths.

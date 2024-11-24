@@ -1,18 +1,18 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
-    name = "fs",
+    name = "fsi",
     srcs = [
         "directories.go",
         "files.go",
-        "fs.go",
+        "fsi.go",
         "git.go",
         "paths.go",
         "paths_darwin.go",
         "paths_linux.go",
         "paths_windows.go",
     ],
-    importpath = "github.com/fmjstudios/gopskit/pkg/fs",
+    importpath = "github.com/fmjstudios/gopskit/pkg/fsi",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/helpers",
@@ -24,14 +24,14 @@ go_library(
 )
 
 go_test(
-    name = "fs_test",
+    name = "fsi_test",
     srcs = ["paths_test.go"],
-    embed = [":fs"],
+    embed = [":fsi"],
     deps = ["@com_github_stretchr_testify//assert"],
 )
 
 alias(
     name = "go_default_library",
-    actual = ":fs",
+    actual = ":fsi",
     visibility = ["//visibility:public"],
 )
