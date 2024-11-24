@@ -2,8 +2,10 @@ package app
 
 import (
 	"fmt"
+
+	"github.com/Nerzal/gocloak/v13"
 	"github.com/fmjstudios/gopskit/pkg/core"
-	"github.com/fmjstudios/gopskit/pkg/fs"
+	fs "github.com/fmjstudios/gopskit/pkg/fsi"
 	"github.com/fmjstudios/gopskit/pkg/kube"
 	"github.com/fmjstudios/gopskit/pkg/log"
 	"github.com/fmjstudios/gopskit/pkg/proc"
@@ -12,20 +14,26 @@ import (
 )
 
 const (
-	Name = "ssolo"
+	Name             string = "ssolo"
+	DefaultLabel     string = "app=keycloak,app.kubernetes.io/instance=keycloak"
+	DefaultNamespace string = "keycloak"
+)
+
+var (
+	DefaultHostname string = fmt.Sprintf("https://127.0.0.1:%s", kube.DefaultLocalPort)
 )
 
 // Opt is configuration option for the application State
 type Opt func(a *State)
 
-type CLIOpt func() func(a *State) *cobra.Command
+type CLIOpt func(a *State) *cobra.Command
 
 // State is the implementation for the `ssolo` command-line application state
 type State struct {
 	*core.API
 
-	// insert KeycloakClient here
-	// VaultClient *vault.Client
+	// KeycloakClient is the Keycloak API client used to manage its' resources
+	KeycloakClient *gocloak.GoCloak
 }
 
 // New creates a newly initialized instance of the State type
@@ -50,6 +58,8 @@ func New(opts ...Opt) (*State, error) {
 		return nil, err
 	}
 
+	key := gocloak.NewClient(DefaultHostname)
+
 	kc, err := kube.NewClient()
 	if err != nil {
 		return nil, fmt.Errorf("could not create kubernetes client: %v", err)
@@ -66,6 +76,7 @@ func New(opts ...Opt) (*State, error) {
 			Paths: platf,
 			Stamp: stamps,
 		},
+		KeycloakClient: key,
 	}
 
 	// (re-)configure if the user wants to do so

@@ -2,12 +2,19 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "cmd",
-    srcs = ["cmd.go"],
+    srcs = [
+        "cmd.go",
+        "gitlab.go",
+    ],
     importpath = "github.com/fmjstudios/gopskit/internal/ssolo/cmd",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/ssolo/app",
+        "//pkg/helpers",
+        "//pkg/proc",
         "@com_github_spf13_cobra//:cobra",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
     ],
 )
 
