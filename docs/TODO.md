@@ -2,7 +2,6 @@
 
 ## ➕ Additions
 
-- [x] Add [`.bazelrc`](https://bazel.build/run/bazelrc)
 - [ ] Add `.env` support with [`godotenv`](https://github.com/joho/godotenv)
 - [ ] add `config` package with file-configuration based on `type`
 - [ ] add `--version`, `--overwrite`, `--silent` flags
@@ -11,21 +10,16 @@
 
 ## ✏️ Planned Changes
 
-- [x] merge `platform` and `filesystem` packages into `fs`
 - [ ] implement better logging format
-- [x] remove obsolete `errors` package
-- [x] merge `env` and `common` packages
-- [x] make current code asynchronous
-- [x] do generel code-cleanup
-- [x] remove non-implemented code besides one-liners in `main.go`
-- [x] rename `util` to `helpers` for consistency
-- [x] rename `cmd` to `proc` for consistency
-- [x] shorten field names in `core.App`
-- [x] rename `logger` to just `log`
 
 ## 💡 Ideas
 
 ## 🔗 Links
+
+- [ ] Add `step-ca`-less certificate generation with [`pki` package](https://github.com/smallstep/certificates/blob/master/pki/pki.go) and guidance from the [CLI implementation](https://github.com/smallstep/cli/blob/master/command/ca/init.go#L649)
+- [ ] Add [`viper`](https://github.com/spf13/viper/blob/master/viper.go#L473)-based  `config` package with [`hcloud-cli` inspired features](https://github.com/hetznercloud/cli/blob/main/internal/state/config/options.go)
+- [ ] Evaluate implementation of a custom Vault plugin for Keycloak with guidance from the [Vault Keycloak Plugin][vault-keycloak-plugin-serviceware], [Vault Auth Plugin Example][vault-example-auth-plugin], [Vault HashCups Plugin Example][vault-example-hashicups-plugin], [(Official) Vault Kubernetes Plugin][vault-kubernetes-plugin]
+- [ ] Evaluate integration of [VMWare-Labs YAMLPath module](https://github.com/vmware-labs/yaml-jsonpath) or the [Kubernetes-bundled JSONPath implementation](https://pkg.go.dev/k8s.io/client-go/util/jsonpath)
 
 ### Kubernetes
 
@@ -114,3 +108,9 @@ for k, v := range mp {
 fmt.Printf("Key: %s - Value: %s\n", k, v)
 }
 ```
+<!-- EXTERNAL LINKS -->
+
+[vault-kubernetes-plugin]: https://github.com/hashicorp/vault-plugin-secrets-kubernetes
+[vault-example-hashicups-plugin]: https://github.com/hashicorp-education/learn-vault-plugin-secrets-hashicups
+[vault-example-auth-plugin]: https://github.com/hashicorp/vault-auth-plugin-example/tree/master
+[vault-keycloak-plugin-serviceware]: https://github.com/Serviceware/vault-plugin-secrets-keycloak
