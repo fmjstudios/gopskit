@@ -21,6 +21,7 @@ var (
 	// PrepareSubcommands is a slice of CLIOpt options for subcommands of the 'prepare' subcommand
 	PrepareSubcommands = []app.CLIOpt{
 		NewPrepareKeycloakCommand,
+		NewPrepareGitLabCommand,
 	}
 )
 

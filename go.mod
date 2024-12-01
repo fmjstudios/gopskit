@@ -4,17 +4,19 @@ go 1.23.2
 
 require (
 	github.com/Luzifer/go-dhparam v1.3.0
+	github.com/Nerzal/gocloak/v13 v13.9.0
 	github.com/dgraph-io/badger/v4 v4.3.0
 	github.com/go-resty/resty/v2 v2.14.0
 	github.com/hashicorp/hcl/v2 v2.22.0
 	github.com/hashicorp/vault-client-go v0.4.3
+	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
 	github.com/vmware-labs/yaml-jsonpath v0.3.2
 	go.uber.org/zap v1.27.0
 	golang.org/x/mod v0.21.0
-	golang.org/x/sync v0.8.0
-	golang.org/x/text v0.19.0
+	golang.org/x/sync v0.9.0
+	golang.org/x/text v0.20.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.31.0
 	k8s.io/apimachinery v0.31.0
@@ -24,7 +26,6 @@ require (
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/Nerzal/gocloak/v13 v13.9.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect

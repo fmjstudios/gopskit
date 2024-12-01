@@ -13,6 +13,8 @@ import (
 	fs "github.com/fmjstudios/gopskit/pkg/fsi"
 	"github.com/fmjstudios/gopskit/pkg/helpers"
 	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/vault-client-go"
+	"github.com/hashicorp/vault-client-go/schema"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -242,6 +244,29 @@ func WaitUntilRunning(a *app.State, pod corev1.Pod) {
 			break
 		}
 	}
+}
+
+func HasKvV2Secret(a *app.State, path, mountPath string) bool {
+	var exists bool
+	_, err := a.VaultClient.Secrets.KvV2Read(context.Background(), path, vault.WithMountPath(mountPath))
+	if err != nil {
+		// mitigate empty result
+		if !strings.Contains(err.Error(), "404 Not Found") {
+			exists = true
+		}
+	}
+
+	return exists
+}
+
+func WriteKvV2Secret(a *app.State, path, mountPath string, data schema.KvV2WriteRequest) error {
+	// write
+	_, err := a.VaultClient.Secrets.KvV2Write(context.Background(), path, data, vault.WithMountPath(mountPath))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Policies

@@ -8,6 +8,7 @@ go_library(
         "init.go",
         "mounts.go",
         "prepare.go",
+        "prepare_gitlab.go",
         "prepare_keycloak.go",
         "test.go",
         "transit.go",

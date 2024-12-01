@@ -13,18 +13,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var _ app.CLIOpt = NewPrepareKeycloakCommand // assure type compatibility
+var _ app.CLIOpt = NewPrepareGitLabCommand // assure type compatibility
 
-func NewPrepareKeycloakCommand(app *app.State) *cobra.Command {
+func NewPrepareGitLabCommand(app *app.State) *cobra.Command {
 	var (
 		token     string
 		overwrite bool
 	)
 
 	cmd := &cobra.Command{
-		Use:              "keycloak",
-		Short:            "Prepare Vault for Keycloak",
-		Long:             "Prepare Vault with policies and roles for Keycloak",
+		Use:              "gitlab",
+		Short:            "Prepare Vault for GitLab",
+		Long:             "Prepare Vault with policies and roles for GitLab",
 		TraverseChildren: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			envF := proc.Must(cmd.Flags().GetString("environment"))
@@ -65,7 +65,7 @@ func NewPrepareKeycloakCommand(app *app.State) *cobra.Command {
 			}
 
 			// create Kubernetes role
-			const r = "keycloak"
+			const r = "gitlab"
 			rola, err := util.KubernetesAuthRoles(app)
 			if err != nil {
 				return err
@@ -88,13 +88,13 @@ func NewPrepareKeycloakCommand(app *app.State) *cobra.Command {
 					return err
 				}
 
-				app.Log.Infof("configured Vault Kubernetes Auth Role %s for Keycloak", r)
+				app.Log.Infof("configured Vault Kubernetes Auth Role %s for GitLab", r)
 			} else {
-				app.Log.Infof("skipped configuration of Vault Kubernetes Auth Role %s for Keycloak", r)
+				app.Log.Infof("skipped configuration of Vault Kubernetes Auth Role %s for GitLab", r)
 			}
 
 			// create Admin credentials
-			const adminPath = "keycloak/config"
+			const adminPath = "gitlab/config"
 			adminPass, err := util.GeneratePasswordFromPolicy(app, "alphanumeric-password")
 			if err != nil {
 				return err
@@ -114,13 +114,39 @@ func NewPrepareKeycloakCommand(app *app.State) *cobra.Command {
 					return err
 				}
 
-				app.Log.Infof("configured Keycloak Admin credentials at path: %s", adminPath)
+				app.Log.Infof("configured GitLab Admin credentials at path: %s", adminPath)
 			} else {
-				app.Log.Infof("skipped configuration of Keycloak Admin credentials at path: %s", adminPath)
+				app.Log.Infof("skipped configuration of GitLab Admin credentials at path: %s", adminPath)
+			}
+
+			// create Redis credentials (skip if exists)
+			const redisPath = "gitlab/credentials/redis"
+			redisPass, err := util.GeneratePasswordFromPolicy(app, "alphanumeric-password")
+			if err != nil {
+				return err
+			}
+
+			var redisExists bool = util.HasKvV2Secret(app, redisPath, "kv/")
+			if redisExists && overwrite || !redisExists {
+				err := util.WriteKvV2Secret(app, redisPath, "kv/", schema.KvV2WriteRequest{
+					Data: map[string]interface{}{
+						"username": "redis",
+						"password": redisPass,
+					},
+					Options: nil,
+				})
+
+				if err != nil {
+					return err
+				}
+
+				app.Log.Infof("configured GitLab Redis credentials at path: %s", redisPath)
+			} else {
+				app.Log.Infof("skipped configuration of GitLab Redis credentials at path: %s", redisPath)
 			}
 
 			// create PostgreSQL credentials (skip if exists)
-			const psqlPath = "keycloak/credentials/postgresql"
+			const psqlPath = "gitlab/credentials/postgresql"
 			psqlPass, err := util.GeneratePasswordFromPolicy(app, "alphanumeric-password")
 			if err != nil {
 				return err
@@ -130,7 +156,7 @@ func NewPrepareKeycloakCommand(app *app.State) *cobra.Command {
 			if psqlExists && overwrite || !psqlExists {
 				err := util.WriteKvV2Secret(app, psqlPath, "kv/", schema.KvV2WriteRequest{
 					Data: map[string]interface{}{
-						"username": "keycloak",
+						"username": "gitlab",
 						"password": psqlPass,
 					},
 					Options: nil,
@@ -140,9 +166,40 @@ func NewPrepareKeycloakCommand(app *app.State) *cobra.Command {
 					return err
 				}
 
-				app.Log.Infof("configured Keycloak PostgreSQL credentials at path: %s", psqlPath)
+				app.Log.Infof("configured GitLab PostgreSQL credentials at path: %s", psqlPath)
 			} else {
-				app.Log.Infof("skipped configuration of Keycloak PostgreSQL credentials at path: %s", psqlPath)
+				app.Log.Infof("skipped configuration of GitLab PostgreSQL credentials at path: %s", psqlPath)
+			}
+
+			// create MinIO credentials (skip if exists)
+			const minioPath = "gitlab/credentials/minio"
+			minioAccessKey, err := util.GeneratePasswordFromPolicy(app, "s3-access-key")
+			if err != nil {
+				return err
+			}
+
+			minioSecretKey, err := util.GeneratePasswordFromPolicy(app, "s3-secret-key")
+			if err != nil {
+				return err
+			}
+
+			var minioExists bool = util.HasKvV2Secret(app, minioPath, "kv/")
+			if minioExists && overwrite || !minioExists {
+				err := util.WriteKvV2Secret(app, minioPath, "kv/", schema.KvV2WriteRequest{
+					Data: map[string]interface{}{
+						"access_key": minioAccessKey,
+						"secret_key": minioSecretKey,
+					},
+					Options: nil,
+				})
+
+				if err != nil {
+					return err
+				}
+
+				app.Log.Infof("configured GitLab MinIO credentials at path: %s", minioPath)
+			} else {
+				app.Log.Infof("skipped configuration of GitLab MinIO credentials at path: %s", minioPath)
 			}
 
 			return nil
